@@ -1,0 +1,1482 @@
+{
+  "$defs": {
+    "ArtifactKind": {
+      "enum": [
+        "input_model",
+        "optimized_model",
+        "deployable",
+        "compiler_log",
+        "analysis",
+        "validation",
+        "rewrite_history",
+        "report",
+        "other"
+      ],
+      "title": "ArtifactKind",
+      "type": "string"
+    },
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "kind": {
+          "$ref": "#/$defs/ArtifactKind"
+        },
+        "media_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Media Type"
+        },
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sha256"
+        },
+        "size_bytes": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Size Bytes"
+        }
+      },
+      "required": [
+        "kind",
+        "path"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "Availability": {
+      "enum": [
+        "available",
+        "partial",
+        "unavailable"
+      ],
+      "title": "Availability",
+      "type": "string"
+    },
+    "BackendCapabilities": {
+      "additionalProperties": false,
+      "properties": {
+        "input_formats": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Input Formats",
+          "type": "array"
+        },
+        "supports_compile": {
+          "default": true,
+          "title": "Supports Compile",
+          "type": "boolean"
+        },
+        "supports_cpu_fallback": {
+          "default": false,
+          "title": "Supports Cpu Fallback",
+          "type": "boolean"
+        },
+        "supports_node_placement": {
+          "default": false,
+          "title": "Supports Node Placement",
+          "type": "boolean"
+        },
+        "supports_profiling": {
+          "default": false,
+          "title": "Supports Profiling",
+          "type": "boolean"
+        },
+        "supports_target_validation": {
+          "default": false,
+          "title": "Supports Target Validation",
+          "type": "boolean"
+        }
+      },
+      "title": "BackendCapabilities",
+      "type": "object"
+    },
+    "BackendTarget": {
+      "additionalProperties": false,
+      "properties": {
+        "availability": {
+          "$ref": "#/$defs/Availability"
+        },
+        "backend_name": {
+          "minLength": 1,
+          "title": "Backend Name",
+          "type": "string"
+        },
+        "backend_version": {
+          "minLength": 1,
+          "title": "Backend Version",
+          "type": "string"
+        },
+        "capabilities": {
+          "$ref": "#/$defs/BackendCapabilities"
+        },
+        "device": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DeviceInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "issues": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Issues",
+          "type": "array"
+        },
+        "target_id": {
+          "minLength": 1,
+          "title": "Target Id",
+          "type": "string"
+        },
+        "toolchain": {
+          "$ref": "#/$defs/ToolchainInfo"
+        }
+      },
+      "required": [
+        "target_id",
+        "backend_name",
+        "backend_version",
+        "availability"
+      ],
+      "title": "BackendTarget",
+      "type": "object"
+    },
+    "CompilationAnalysis": {
+      "additionalProperties": false,
+      "properties": {
+        "analysis_id": {
+          "minLength": 1,
+          "title": "Analysis Id",
+          "type": "string"
+        },
+        "artifacts": {
+          "items": {
+            "$ref": "#/$defs/ArtifactRef"
+          },
+          "title": "Artifacts",
+          "type": "array"
+        },
+        "compiler": {
+          "$ref": "#/$defs/ToolInfo"
+        },
+        "diagnostics": {
+          "items": {
+            "$ref": "#/$defs/Diagnostic"
+          },
+          "title": "Diagnostics",
+          "type": "array"
+        },
+        "graph": {
+          "$ref": "#/$defs/GraphSummary"
+        },
+        "invocation": {
+          "$ref": "#/$defs/CompilerInvocation"
+        },
+        "model_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Model Sha256",
+          "type": "string"
+        },
+        "nodes": {
+          "items": {
+            "$ref": "#/$defs/NodeAnalysis"
+          },
+          "title": "Nodes",
+          "type": "array"
+        },
+        "partitions": {
+          "items": {
+            "$ref": "#/$defs/PartitionAnalysis"
+          },
+          "title": "Partitions",
+          "type": "array"
+        },
+        "performance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PerformanceMetrics"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "status": {
+          "$ref": "#/$defs/CompilationStatus"
+        }
+      },
+      "required": [
+        "analysis_id",
+        "status",
+        "model_sha256",
+        "compiler",
+        "invocation",
+        "graph"
+      ],
+      "title": "CompilationAnalysis",
+      "type": "object"
+    },
+    "CompilationStatus": {
+      "enum": [
+        "succeeded",
+        "partial",
+        "failed"
+      ],
+      "title": "CompilationStatus",
+      "type": "string"
+    },
+    "CompilerInvocation": {
+      "additionalProperties": false,
+      "properties": {
+        "command": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Command",
+          "type": "array"
+        },
+        "duration_ms": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Duration Ms"
+        },
+        "exit_code": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Exit Code"
+        },
+        "working_directory": {
+          "minLength": 1,
+          "title": "Working Directory",
+          "type": "string"
+        }
+      },
+      "required": [
+        "command",
+        "working_directory"
+      ],
+      "title": "CompilerInvocation",
+      "type": "object"
+    },
+    "ConnectionType": {
+      "enum": [
+        "local",
+        "usb",
+        "serial",
+        "network",
+        "simulator"
+      ],
+      "title": "ConnectionType",
+      "type": "string"
+    },
+    "DeviceInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "accelerator": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Accelerator"
+        },
+        "address": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Address"
+        },
+        "connection": {
+          "$ref": "#/$defs/ConnectionType"
+        },
+        "device_id": {
+          "minLength": 1,
+          "title": "Device Id",
+          "type": "string"
+        },
+        "firmware_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Firmware Version"
+        },
+        "metadata": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": "Metadata",
+          "type": "object"
+        },
+        "model": {
+          "minLength": 1,
+          "title": "Model",
+          "type": "string"
+        },
+        "vendor": {
+          "minLength": 1,
+          "title": "Vendor",
+          "type": "string"
+        }
+      },
+      "required": [
+        "device_id",
+        "vendor",
+        "model",
+        "connection"
+      ],
+      "title": "DeviceInfo",
+      "type": "object"
+    },
+    "Diagnostic": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Code"
+        },
+        "message": {
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        },
+        "node_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Node Id"
+        },
+        "severity": {
+          "$ref": "#/$defs/Severity"
+        },
+        "source": {
+          "minLength": 1,
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "severity",
+        "source",
+        "message"
+      ],
+      "title": "Diagnostic",
+      "type": "object"
+    },
+    "GraphSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "accelerator_cpu_transitions": {
+          "minimum": 0,
+          "title": "Accelerator Cpu Transitions",
+          "type": "integer"
+        },
+        "accelerator_node_ratio": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Accelerator Node Ratio",
+          "type": "number"
+        },
+        "accelerator_nodes": {
+          "minimum": 0,
+          "title": "Accelerator Nodes",
+          "type": "integer"
+        },
+        "cpu_nodes": {
+          "minimum": 0,
+          "title": "Cpu Nodes",
+          "type": "integer"
+        },
+        "estimated_boundary_transfer_bytes": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Estimated Boundary Transfer Bytes"
+        },
+        "partition_count": {
+          "minimum": 0,
+          "title": "Partition Count",
+          "type": "integer"
+        },
+        "total_nodes": {
+          "minimum": 0,
+          "title": "Total Nodes",
+          "type": "integer"
+        },
+        "unknown_nodes": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Unknown Nodes",
+          "type": "integer"
+        },
+        "unsupported_nodes": {
+          "minimum": 0,
+          "title": "Unsupported Nodes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "total_nodes",
+        "accelerator_nodes",
+        "cpu_nodes",
+        "unsupported_nodes",
+        "accelerator_node_ratio",
+        "partition_count",
+        "accelerator_cpu_transitions"
+      ],
+      "title": "GraphSummary",
+      "type": "object"
+    },
+    "ModelInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "inputs": {
+          "items": {
+            "$ref": "#/$defs/TensorSpec"
+          },
+          "title": "Inputs",
+          "type": "array"
+        },
+        "ir_version": {
+          "minimum": 0,
+          "title": "Ir Version",
+          "type": "integer"
+        },
+        "node_count": {
+          "minimum": 0,
+          "title": "Node Count",
+          "type": "integer"
+        },
+        "opset_imports": {
+          "additionalProperties": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "title": "Opset Imports",
+          "type": "object"
+        },
+        "outputs": {
+          "items": {
+            "$ref": "#/$defs/TensorSpec"
+          },
+          "title": "Outputs",
+          "type": "array"
+        },
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "size_bytes": {
+          "minimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "size_bytes",
+        "ir_version",
+        "opset_imports",
+        "node_count",
+        "inputs",
+        "outputs"
+      ],
+      "title": "ModelInfo",
+      "type": "object"
+    },
+    "NodeAnalysis": {
+      "additionalProperties": false,
+      "description": "Mapping between a stable ARONA node ID and a compiler placement decision.",
+      "properties": {
+        "backend_operator": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Backend Operator"
+        },
+        "domain": {
+          "default": "",
+          "title": "Domain",
+          "type": "string"
+        },
+        "node_id": {
+          "minLength": 1,
+          "title": "Node Id",
+          "type": "string"
+        },
+        "onnx_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Onnx Name"
+        },
+        "op_type": {
+          "minLength": 1,
+          "title": "Op Type",
+          "type": "string"
+        },
+        "partition_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Partition Id"
+        },
+        "placement": {
+          "$ref": "#/$defs/Placement"
+        },
+        "reasons": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Reasons",
+          "type": "array"
+        },
+        "source_index": {
+          "minimum": 0,
+          "title": "Source Index",
+          "type": "integer"
+        },
+        "support_status": {
+          "$ref": "#/$defs/SupportStatus"
+        }
+      },
+      "required": [
+        "node_id",
+        "source_index",
+        "op_type",
+        "support_status",
+        "placement"
+      ],
+      "title": "NodeAnalysis",
+      "type": "object"
+    },
+    "OptimizationDecision": {
+      "additionalProperties": false,
+      "properties": {
+        "accelerator_cpu_transitions_delta": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Accelerator Cpu Transitions Delta"
+        },
+        "accelerator_node_ratio_delta": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Accelerator Node Ratio Delta"
+        },
+        "accepted": {
+          "title": "Accepted",
+          "type": "boolean"
+        },
+        "latency_mean_delta_ms": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Latency Mean Delta Ms"
+        },
+        "reasons": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Reasons",
+          "type": "array"
+        },
+        "selected": {
+          "enum": [
+            "baseline",
+            "optimized"
+          ],
+          "title": "Selected",
+          "type": "string"
+        }
+      },
+      "required": [
+        "selected",
+        "accepted",
+        "reasons"
+      ],
+      "title": "OptimizationDecision",
+      "type": "object"
+    },
+    "OutputError": {
+      "additionalProperties": false,
+      "properties": {
+        "cosine_similarity": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": -1,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cosine Similarity"
+        },
+        "max_absolute_error": {
+          "minimum": 0,
+          "title": "Max Absolute Error",
+          "type": "number"
+        },
+        "max_relative_error": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Relative Error"
+        },
+        "mean_absolute_error": {
+          "minimum": 0,
+          "title": "Mean Absolute Error",
+          "type": "number"
+        },
+        "output_name": {
+          "minLength": 1,
+          "title": "Output Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "output_name",
+        "max_absolute_error",
+        "mean_absolute_error"
+      ],
+      "title": "OutputError",
+      "type": "object"
+    },
+    "PartitionAnalysis": {
+      "additionalProperties": false,
+      "properties": {
+        "boundaries": {
+          "items": {
+            "$ref": "#/$defs/TensorBoundary"
+          },
+          "title": "Boundaries",
+          "type": "array"
+        },
+        "node_ids": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Node Ids",
+          "type": "array"
+        },
+        "partition_id": {
+          "minLength": 1,
+          "title": "Partition Id",
+          "type": "string"
+        },
+        "placement": {
+          "$ref": "#/$defs/Placement"
+        }
+      },
+      "required": [
+        "partition_id",
+        "placement",
+        "node_ids"
+      ],
+      "title": "PartitionAnalysis",
+      "type": "object"
+    },
+    "PerformanceMetrics": {
+      "additionalProperties": false,
+      "properties": {
+        "latency_mean_ms": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Latency Mean Ms"
+        },
+        "latency_p50_ms": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Latency P50 Ms"
+        },
+        "latency_p95_ms": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Latency P95 Ms"
+        },
+        "peak_memory_bytes": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Peak Memory Bytes"
+        },
+        "sample_count": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sample Count"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "enum": [
+                "compiler_estimate",
+                "host_measurement",
+                "target_measurement"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source"
+        }
+      },
+      "title": "PerformanceMetrics",
+      "type": "object"
+    },
+    "Placement": {
+      "enum": [
+        "accelerator",
+        "cpu",
+        "mixed",
+        "unknown"
+      ],
+      "title": "Placement",
+      "type": "string"
+    },
+    "RewriteKind": {
+      "enum": [
+        "exact",
+        "neural"
+      ],
+      "title": "RewriteKind",
+      "type": "string"
+    },
+    "RewriteRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "affected_node_ids": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Affected Node Ids",
+          "type": "array"
+        },
+        "candidate_analysis_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Candidate Analysis Id"
+        },
+        "candidate_model": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ArtifactRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "kind": {
+          "$ref": "#/$defs/RewriteKind"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "rewrite_id": {
+          "minLength": 1,
+          "title": "Rewrite Id",
+          "type": "string"
+        },
+        "rule_id": {
+          "minLength": 1,
+          "title": "Rule Id",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/RewriteStatus"
+        },
+        "validation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ValidationResult"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "rewrite_id",
+        "rule_id",
+        "kind",
+        "status",
+        "affected_node_ids",
+        "reason"
+      ],
+      "title": "RewriteRecord",
+      "type": "object"
+    },
+    "RewriteStatus": {
+      "enum": [
+        "proposed",
+        "applied",
+        "rejected",
+        "rolled_back"
+      ],
+      "title": "RewriteStatus",
+      "type": "string"
+    },
+    "RunStatus": {
+      "enum": [
+        "queued",
+        "discovering",
+        "analyzing",
+        "optimizing",
+        "validating",
+        "completed",
+        "failed",
+        "cancelled"
+      ],
+      "title": "RunStatus",
+      "type": "string"
+    },
+    "Severity": {
+      "enum": [
+        "info",
+        "warning",
+        "error"
+      ],
+      "title": "Severity",
+      "type": "string"
+    },
+    "SupportStatus": {
+      "enum": [
+        "native",
+        "constrained",
+        "fallback",
+        "unsupported",
+        "unknown"
+      ],
+      "title": "SupportStatus",
+      "type": "string"
+    },
+    "TensorBoundary": {
+      "additionalProperties": false,
+      "properties": {
+        "destination_partition_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Destination Partition Id"
+        },
+        "destination_placement": {
+          "$ref": "#/$defs/Placement"
+        },
+        "estimated_transfer_bytes": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Estimated Transfer Bytes"
+        },
+        "source_partition_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Partition Id"
+        },
+        "source_placement": {
+          "$ref": "#/$defs/Placement"
+        },
+        "tensor_name": {
+          "minLength": 1,
+          "title": "Tensor Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tensor_name",
+        "source_placement",
+        "destination_placement"
+      ],
+      "title": "TensorBoundary",
+      "type": "object"
+    },
+    "TensorSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "data_type": {
+          "minLength": 1,
+          "title": "Data Type",
+          "type": "string"
+        },
+        "layout": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Layout"
+        },
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "shape": {
+          "items": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": "Shape",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "data_type",
+        "shape"
+      ],
+      "title": "TensorSpec",
+      "type": "object"
+    },
+    "ToolInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "executable": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Executable"
+        },
+        "metadata": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": "Metadata",
+          "type": "object"
+        },
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "title": "ToolInfo",
+      "type": "object"
+    },
+    "ToolchainInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "compiler": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ToolInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "debugger": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ToolInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "runtime": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ToolInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "sdk": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ToolInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "ToolchainInfo",
+      "type": "object"
+    },
+    "ValidationResult": {
+      "additionalProperties": false,
+      "properties": {
+        "absolute_tolerance": {
+          "minimum": 0,
+          "title": "Absolute Tolerance",
+          "type": "number"
+        },
+        "artifact": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ArtifactRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "candidate_runtime": {
+          "minLength": 1,
+          "title": "Candidate Runtime",
+          "type": "string"
+        },
+        "outputs": {
+          "items": {
+            "$ref": "#/$defs/OutputError"
+          },
+          "title": "Outputs",
+          "type": "array"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reason"
+        },
+        "reference_runtime": {
+          "minLength": 1,
+          "title": "Reference Runtime",
+          "type": "string"
+        },
+        "relative_tolerance": {
+          "minimum": 0,
+          "title": "Relative Tolerance",
+          "type": "number"
+        },
+        "sample_count": {
+          "minimum": 0,
+          "title": "Sample Count",
+          "type": "integer"
+        },
+        "status": {
+          "$ref": "#/$defs/ValidationStatus"
+        }
+      },
+      "required": [
+        "status",
+        "reference_runtime",
+        "candidate_runtime",
+        "sample_count",
+        "absolute_tolerance",
+        "relative_tolerance"
+      ],
+      "title": "ValidationResult",
+      "type": "object"
+    },
+    "ValidationStatus": {
+      "enum": [
+        "passed",
+        "failed",
+        "skipped",
+        "error"
+      ],
+      "title": "ValidationStatus",
+      "type": "string"
+    }
+  },
+  "$id": "https://arona.dev/schemas/v0.1.0/run-report.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Canonical state/result document rendered by the UI and report generator.",
+  "properties": {
+    "artifacts": {
+      "items": {
+        "$ref": "#/$defs/ArtifactRef"
+      },
+      "title": "Artifacts",
+      "type": "array"
+    },
+    "baseline": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CompilationAnalysis"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "decision": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/OptimizationDecision"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "diagnostics": {
+      "items": {
+        "$ref": "#/$defs/Diagnostic"
+      },
+      "title": "Diagnostics",
+      "type": "array"
+    },
+    "model": {
+      "$ref": "#/$defs/ModelInfo"
+    },
+    "optimized": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CompilationAnalysis"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "rewrites": {
+      "items": {
+        "$ref": "#/$defs/RewriteRecord"
+      },
+      "title": "Rewrites",
+      "type": "array"
+    },
+    "run_id": {
+      "minLength": 1,
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "0.1.0",
+      "default": "0.1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/RunStatus"
+    },
+    "target": {
+      "$ref": "#/$defs/BackendTarget"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "status",
+    "created_at",
+    "updated_at",
+    "target",
+    "model"
+  ],
+  "title": "RunReport",
+  "type": "object"
+}

@@ -1,0 +1,137 @@
+{
+  "$defs": {
+    "InputModelReference": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sha256"
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "title": "InputModelReference",
+      "type": "object"
+    },
+    "OptimizationConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "enable_exact_rewrites": {
+          "default": true,
+          "title": "Enable Exact Rewrites",
+          "type": "boolean"
+        },
+        "enable_neural_adaptation": {
+          "default": false,
+          "title": "Enable Neural Adaptation",
+          "type": "boolean"
+        },
+        "max_iterations": {
+          "default": 10,
+          "minimum": 1,
+          "title": "Max Iterations",
+          "type": "integer"
+        },
+        "require_measured_improvement": {
+          "default": true,
+          "title": "Require Measured Improvement",
+          "type": "boolean"
+        }
+      },
+      "title": "OptimizationConfig",
+      "type": "object"
+    },
+    "ValidationConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "absolute_tolerance": {
+          "default": 1e-05,
+          "minimum": 0,
+          "title": "Absolute Tolerance",
+          "type": "number"
+        },
+        "input_paths": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Input Paths",
+          "type": "array"
+        },
+        "random_samples": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Random Samples",
+          "type": "integer"
+        },
+        "relative_tolerance": {
+          "default": 0.0001,
+          "minimum": 0,
+          "title": "Relative Tolerance",
+          "type": "number"
+        }
+      },
+      "title": "ValidationConfig",
+      "type": "object"
+    }
+  },
+  "$id": "https://arona.dev/schemas/v0.1.0/optimize-request.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Request submitted by the UI or CLI to the optimization pipeline.",
+  "properties": {
+    "model": {
+      "$ref": "#/$defs/InputModelReference"
+    },
+    "optimization": {
+      "$ref": "#/$defs/OptimizationConfig"
+    },
+    "output_directory": {
+      "default": "outputs",
+      "minLength": 1,
+      "title": "Output Directory",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "0.1.0",
+      "default": "0.1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "target_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Target Id"
+    },
+    "validation": {
+      "$ref": "#/$defs/ValidationConfig"
+    }
+  },
+  "required": [
+    "model"
+  ],
+  "title": "OptimizeRequest",
+  "type": "object"
+}

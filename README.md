@@ -155,6 +155,34 @@ outputs/<run-id>/
 | 코드 품질 | Ruff, pre-commit |
 | 하드웨어 연동 | vendor SDK/compiler를 호출하는 backend adapter |
 
+## MVP primary backend
+
+Sprint 0의 primary target은 **ST NUCLEO-N657X0-Q의 Neural-ART accelerator**이며,
+`stedgeai` CLI를 첫 `BackendAdapter`로 구현합니다. 실제 연구실 개발 PC에 설치된 compiler,
+SDK, ST-LINK firmware 버전은 baseline compile을 재현한 뒤 고정합니다. 결정과 증거 보관
+규칙은 [ST Edge AI backend 문서](docs/backends/stedgeai.md)에 기록합니다.
+
+## 개발 시작
+
+Python과 오픈소스 패키지는 `uv`와 `uv.lock`으로 관리합니다.
+
+```bash
+uv sync --extra ui
+uv run arona --help
+uv run pytest
+```
+
+backend와 UI가 공유하는 Pydantic 계약은 `src/arona/contracts/v1.py`, 생성된 JSON Schema는
+`schemas/v0.1.0/`에 있습니다.
+
+```bash
+uv run arona schema export
+```
+
+환경 구성, 품질 검사 및 의존성 갱신 방법은 [개발 문서](docs/development.md), 계약의 의미와
+호환성 정책은 [Backend/UI JSON 계약](docs/contracts/backend-ui.md), 직접 의존성의 역할과
+현재 잠금 버전은 [의존성 목록](docs/dependencies.md)을 참고합니다.
+
 ## 라이선스
 
 이 프로젝트는 [MIT License](LICENSE)를 따릅니다.

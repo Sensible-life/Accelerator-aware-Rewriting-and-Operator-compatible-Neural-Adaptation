@@ -1,0 +1,267 @@
+{
+  "schema_version": "0.1.0",
+  "run_id": "20260730T120000Z-stm32n6-demo",
+  "status": "completed",
+  "created_at": "2026-07-30T12:00:00Z",
+  "updated_at": "2026-07-30T12:04:00Z",
+  "target": {
+    "target_id": "stedgeai:stm32n6:usb-001",
+    "backend_name": "stedgeai",
+    "backend_version": "0.1.0",
+    "availability": "available",
+    "device": {
+      "device_id": "usb-001",
+      "vendor": "STMicroelectronics",
+      "model": "NUCLEO-N657X0-Q",
+      "accelerator": "ST Neural-ART",
+      "connection": "usb",
+      "address": "serial:COM7",
+      "firmware_version": null,
+      "metadata": {}
+    },
+    "toolchain": {
+      "sdk": {
+        "name": "ST Edge AI Core",
+        "version": "example-version",
+        "executable": null,
+        "metadata": {}
+      },
+      "compiler": {
+        "name": "stedgeai",
+        "version": "example-version",
+        "executable": "stedgeai",
+        "metadata": {}
+      },
+      "runtime": null,
+      "debugger": null
+    },
+    "capabilities": {
+      "input_formats": ["onnx"],
+      "supports_compile": true,
+      "supports_node_placement": true,
+      "supports_cpu_fallback": true,
+      "supports_target_validation": true,
+      "supports_profiling": true
+    },
+    "issues": []
+  },
+  "model": {
+    "path": "inputs/silu-demo.onnx",
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "size_bytes": 4096,
+    "ir_version": 10,
+    "opset_imports": {"": 18},
+    "node_count": 4,
+    "inputs": [
+      {
+        "name": "input",
+        "data_type": "float32",
+        "shape": [1, 3, 32, 32],
+        "layout": "NCHW"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "output",
+        "data_type": "float32",
+        "shape": [1, 10],
+        "layout": "NC"
+      }
+    ]
+  },
+  "baseline": {
+    "analysis_id": "baseline",
+    "status": "succeeded",
+    "model_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "compiler": {
+      "name": "stedgeai",
+      "version": "example-version",
+      "executable": "stedgeai",
+      "metadata": {}
+    },
+    "invocation": {
+      "command": ["stedgeai", "analyze", "--target", "stm32n6"],
+      "working_directory": "compiler/baseline",
+      "exit_code": 0,
+      "duration_ms": 1200.0
+    },
+    "graph": {
+      "total_nodes": 4,
+      "accelerator_nodes": 2,
+      "cpu_nodes": 2,
+      "unsupported_nodes": 0,
+      "unknown_nodes": 0,
+      "accelerator_node_ratio": 0.5,
+      "partition_count": 4,
+      "accelerator_cpu_transitions": 3,
+      "estimated_boundary_transfer_bytes": 24576
+    },
+    "nodes": [
+      {
+        "node_id": "node_0000",
+        "source_index": 0,
+        "onnx_name": "conv_0",
+        "op_type": "Conv",
+        "domain": "",
+        "support_status": "native",
+        "placement": "accelerator",
+        "backend_operator": "Conv",
+        "partition_id": "npu_0",
+        "reasons": []
+      },
+      {
+        "node_id": "node_0001",
+        "source_index": 1,
+        "onnx_name": "silu_0",
+        "op_type": "SiLU",
+        "domain": "",
+        "support_status": "fallback",
+        "placement": "cpu",
+        "backend_operator": "SW_FLOAT",
+        "partition_id": "cpu_0",
+        "reasons": ["Single SiLU operator is not mapped to Neural-ART hardware"]
+      },
+      {
+        "node_id": "node_0002",
+        "source_index": 2,
+        "onnx_name": "conv_1",
+        "op_type": "Conv",
+        "domain": "",
+        "support_status": "native",
+        "placement": "accelerator",
+        "backend_operator": "Conv",
+        "partition_id": "npu_1",
+        "reasons": []
+      },
+      {
+        "node_id": "node_0003",
+        "source_index": 3,
+        "onnx_name": "argmax_0",
+        "op_type": "ArgMax",
+        "domain": "",
+        "support_status": "fallback",
+        "placement": "cpu",
+        "backend_operator": "SW_INT",
+        "partition_id": "cpu_1",
+        "reasons": ["Operator is implemented by the software integer runtime"]
+      }
+    ],
+    "partitions": [],
+    "performance": {
+      "latency_mean_ms": 3.2,
+      "latency_p50_ms": 3.1,
+      "latency_p95_ms": 3.5,
+      "sample_count": 20,
+      "peak_memory_bytes": 131072,
+      "source": "target_measurement"
+    },
+    "artifacts": [
+      {
+        "kind": "compiler_log",
+        "path": "compiler/baseline/analyze-report.txt",
+        "media_type": "text/plain",
+        "sha256": null,
+        "size_bytes": null,
+        "description": "Baseline compiler report"
+      }
+    ],
+    "diagnostics": []
+  },
+  "optimized": {
+    "analysis_id": "optimized-1",
+    "status": "succeeded",
+    "model_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "compiler": {
+      "name": "stedgeai",
+      "version": "example-version",
+      "executable": "stedgeai",
+      "metadata": {}
+    },
+    "invocation": {
+      "command": ["stedgeai", "analyze", "--target", "stm32n6"],
+      "working_directory": "compiler/optimized-1",
+      "exit_code": 0,
+      "duration_ms": 1100.0
+    },
+    "graph": {
+      "total_nodes": 5,
+      "accelerator_nodes": 4,
+      "cpu_nodes": 1,
+      "unsupported_nodes": 0,
+      "unknown_nodes": 0,
+      "accelerator_node_ratio": 0.8,
+      "partition_count": 2,
+      "accelerator_cpu_transitions": 1,
+      "estimated_boundary_transfer_bytes": 40
+    },
+    "nodes": [],
+    "partitions": [],
+    "performance": {
+      "latency_mean_ms": 2.1,
+      "latency_p50_ms": 2.0,
+      "latency_p95_ms": 2.3,
+      "sample_count": 20,
+      "peak_memory_bytes": 132096,
+      "source": "target_measurement"
+    },
+    "artifacts": [],
+    "diagnostics": []
+  },
+  "rewrites": [
+    {
+      "rewrite_id": "rewrite-0001",
+      "rule_id": "exact.silu_to_sigmoid_mul",
+      "kind": "exact",
+      "status": "applied",
+      "affected_node_ids": ["node_0001"],
+      "reason": "The replacement graph passed output validation and reduced CPU transitions.",
+      "candidate_model": {
+        "kind": "optimized_model",
+        "path": "optimized-model.onnx",
+        "media_type": "application/onnx",
+        "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "size_bytes": 4300,
+        "description": null
+      },
+      "validation": {
+        "status": "passed",
+        "reference_runtime": "onnxruntime",
+        "candidate_runtime": "onnxruntime",
+        "sample_count": 8,
+        "absolute_tolerance": 1e-05,
+        "relative_tolerance": 0.0001,
+        "outputs": [
+          {
+            "output_name": "output",
+            "max_absolute_error": 0.0,
+            "mean_absolute_error": 0.0,
+            "max_relative_error": 0.0,
+            "cosine_similarity": 1.0
+          }
+        ],
+        "reason": null,
+        "artifact": null
+      },
+      "candidate_analysis_id": "optimized-1"
+    }
+  ],
+  "decision": {
+    "selected": "optimized",
+    "accepted": true,
+    "reasons": ["Output equivalence passed", "Mean target latency improved by 1.1 ms"],
+    "accelerator_node_ratio_delta": 0.3,
+    "accelerator_cpu_transitions_delta": -2,
+    "latency_mean_delta_ms": -1.1
+  },
+  "artifacts": [
+    {
+      "kind": "report",
+      "path": "report.html",
+      "media_type": "text/html",
+      "sha256": null,
+      "size_bytes": null,
+      "description": "Human-readable optimization report"
+    }
+  ],
+  "diagnostics": []
+}
