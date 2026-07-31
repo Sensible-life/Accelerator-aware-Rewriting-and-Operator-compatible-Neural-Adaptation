@@ -1,6 +1,6 @@
-# Backend/UI JSON contract v0.1.0
+# Backend/Pipeline/CLI JSON contract v0.1.0
 
-이 문서는 ARONA backend, CLI, 로컬 UI 및 HTML report generator가 공유하는 Sprint 0
+이 문서는 ARONA backend, optimization pipeline, CLI 및 report generator가 공유하는 Sprint 0
 계약을 정의한다. Pydantic 모델인 `src/arona/contracts/v1.py`가 단일 원천이며,
 `schemas/v0.1.0/` 아래 JSON Schema는 생성 산출물이다.
 
@@ -8,12 +8,12 @@
 
 | JSON Schema | 생산자 | 주요 소비자 | 목적 |
 | --- | --- | --- | --- |
-| `device-discovery.schema.json` | backend registry | CLI, UI | 발견된 장치와 toolchain, 사용 가능 여부 표시 |
-| `optimize-request.schema.json` | CLI, UI | optimizer | 모델, target override, 검증 및 최적화 옵션 전달 |
-| `run-report.schema.json` | optimizer | UI, report generator | 실행 상태, 분석, rewrite, 검증, 비교 및 산출물 표현 |
+| `device-discovery.schema.json` | backend registry | CLI, pipeline | 발견된 장치와 toolchain, 사용 가능 여부 표시 |
+| `optimize-request.schema.json` | CLI | optimizer | 모델, target override, 검증 및 최적화 옵션 전달 |
+| `run-report.schema.json` | optimizer | CLI, report generator | 실행 상태, 분석, rewrite, 검증, 비교 및 산출물 표현 |
 
 `tests/fixtures/contracts/run-report.sample.json`은 baseline과 최적화 결과가 모두 포함된
-UI 개발용 예제다. 값에 포함된 compiler 버전과 측정치는 실제 측정값이 아니다.
+CLI/reporting 개발용 예제다. 값에 포함된 compiler 버전과 측정치는 실제 측정값이 아니다.
 
 ## 공통 규칙
 
@@ -41,7 +41,7 @@ rule-local suffix를 조합한다.
 
 ## 상태와 부분 결과
 
-`RunReport`는 최종 보고서뿐 아니라 UI polling에 사용하는 현재 상태 문서다.
+`RunReport`는 최종 보고서뿐 아니라 CLI가 진행 상태와 부분 결과를 저장하는 상태 문서다.
 따라서 실행 초반에는 `baseline`, `optimized`, `decision`이 `null`일 수 있다.
 
 완료된 실행에서는 다음 조건을 application layer에서 검증한다.

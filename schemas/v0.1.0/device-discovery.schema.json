@@ -355,7 +355,7 @@
   "$id": "https://arona.dev/schemas/v0.1.0/device-discovery.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "Result returned by backend discovery and consumed by target selection UI.",
+  "description": "Result returned by backend discovery and consumed by CLI target selection.",
   "properties": {
     "generated_at": {
       "format": "date-time",

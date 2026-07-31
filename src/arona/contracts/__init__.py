@@ -1,4 +1,4 @@
-"""Versioned data contracts shared by ARONA backends and UI."""
+"""Versioned data contracts shared by ARONA backends, pipeline, and CLI."""
 
 from arona.contracts.v1 import (
     CONTRACT_VERSION,

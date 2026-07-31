@@ -13,7 +13,7 @@ app = typer.Typer(
     help="Optimize ONNX models for detected edge accelerators.",
     no_args_is_help=True,
 )
-schema_app = typer.Typer(help="Inspect and export backend/UI contracts.")
+schema_app = typer.Typer(help="Inspect and export backend/pipeline/CLI contracts.")
 app.add_typer(schema_app, name="schema")
 
 
@@ -34,7 +34,7 @@ def export_schema(
         ),
     ] = Path("schemas/v0.1.0"),
 ) -> None:
-    """Export versioned JSON Schemas used by backend and UI."""
+    """Export versioned JSON Schemas used by backend, pipeline, and CLI."""
     written_files = export_json_schemas(output_directory)
     for path in written_files:
         typer.echo(path.as_posix())

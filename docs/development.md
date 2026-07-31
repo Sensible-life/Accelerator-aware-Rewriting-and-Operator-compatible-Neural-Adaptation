@@ -9,16 +9,16 @@ uv의 patch/minor 차이가 있더라도 `--frozen` 설치 결과는 같아야 �
 ## 최초 설정
 
 ```bash
-uv sync --extra ui
+uv sync
 uv run arona version
 uv run pytest
 ```
 
-`uv sync --extra ui`는 CLI/backend 의존성, 로컬 UI 의존성 및 기본 `dev` dependency
-group을 설치한다. CI와 재현 실험에서는 lockfile 변경을 막기 위해 다음 명령을 사용한다.
+`uv sync`는 CLI/backend 의존성과 기본 `dev` dependency group을 설치한다. CI와 재현
+실험에서는 lockfile 변경을 막기 위해 다음 명령을 사용한다.
 
 ```bash
-uv sync --frozen --extra ui
+uv sync --frozen
 ```
 
 ## 품질 검사
@@ -48,7 +48,7 @@ uv run pre-commit run --all-files
 
 ```bash
 uv lock --upgrade-package onnxruntime
-uv sync --extra ui
+uv sync
 uv run pytest
 ```
 
@@ -62,23 +62,23 @@ uv run arona schema export
 uv run pytest tests/test_contracts.py
 ```
 
-계약 규칙과 versioning은 `docs/contracts/backend-ui.md`를 따른다.
+계약 규칙과 versioning은 `docs/contracts/backend-cli.md`를 따른다.
 
 ## 저장소 구조
 
 ```text
 src/arona/
 ├── cli.py               # Typer CLI 진입점
-└── contracts/           # backend/UI Pydantic 계약과 schema exporter
+└── contracts/           # backend/pipeline/CLI Pydantic 계약과 schema exporter
 schemas/v0.1.0/          # 생성된 공개 JSON Schema
 tests/
-├── fixtures/contracts/  # UI와 backend test가 공유하는 예제 JSON
+├── fixtures/contracts/  # CLI, pipeline과 backend test가 공유하는 예제 JSON
 └── test_*.py
 docs/
 ├── backends/            # vendor toolchain 결정과 재현 절차
 └── contracts/           # 계약 의미와 호환성 정책
 ```
 
-추가 구현은 책임별 package(`backends`, `graph`, `pipeline`, `validation`, `reporting`,
-`ui`)로 분리하되, vendor SDK 타입이나 원본 compiler JSON을 UI로 직접 노출하지 않는다.
+추가 구현은 책임별 package(`backends`, `graph`, `pipeline`, `validation`, `reporting`)로
+분리하되, vendor SDK 타입이나 원본 compiler JSON을 CLI와 report에 직접 노출하지 않는다.
 vendor 결과는 항상 `arona.contracts` 모델로 정규화한다.

@@ -93,7 +93,7 @@
   "$id": "https://arona.dev/schemas/v0.1.0/optimize-request.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "Request submitted by the UI or CLI to the optimization pipeline.",
+  "description": "Request submitted by the CLI to the optimization pipeline.",
   "properties": {
     "model": {
       "$ref": "#/$defs/InputModelReference"

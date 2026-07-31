@@ -1382,7 +1382,7 @@
   "$id": "https://arona.dev/schemas/v0.1.0/run-report.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "Canonical state/result document rendered by the UI and report generator.",
+  "description": "Canonical state/result document rendered by the CLI and report generator.",
   "properties": {
     "artifacts": {
       "items": {

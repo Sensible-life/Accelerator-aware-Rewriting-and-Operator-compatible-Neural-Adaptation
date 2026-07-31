@@ -1,4 +1,4 @@
-"""Draft v0.1.0 contract shared by accelerator backends and the local UI.
+"""Draft v0.1.0 contract shared by accelerator backends, the pipeline, and CLI.
 
 Pydantic models in this module are the source of truth. Committed JSON Schema files
 are generated from these models with ``arona schema export``.
@@ -162,7 +162,7 @@ class BackendTarget(ContractModel):
 
 
 class DeviceDiscovery(ContractModel):
-    """Result returned by backend discovery and consumed by target selection UI."""
+    """Result returned by backend discovery and consumed by CLI target selection."""
 
     schema_version: ContractVersion = CONTRACT_VERSION
     generated_at: datetime
@@ -190,7 +190,7 @@ class OptimizationConfig(ContractModel):
 
 
 class OptimizeRequest(ContractModel):
-    """Request submitted by the UI or CLI to the optimization pipeline."""
+    """Request submitted by the CLI to the optimization pipeline."""
 
     schema_version: ContractVersion = CONTRACT_VERSION
     model: InputModelReference
@@ -350,7 +350,7 @@ class OptimizationDecision(ContractModel):
 
 
 class RunReport(ContractModel):
-    """Canonical state/result document rendered by the UI and report generator."""
+    """Canonical state/result document rendered by the CLI and report generator."""
 
     schema_version: ContractVersion = CONTRACT_VERSION
     run_id: NonEmptyString
