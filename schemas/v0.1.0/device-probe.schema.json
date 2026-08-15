@@ -1,0 +1,389 @@
+{
+  "$defs": {
+    "Availability": {
+      "enum": [
+        "available",
+        "partial",
+        "unavailable"
+      ],
+      "title": "Availability",
+      "type": "string"
+    },
+    "BackendCapabilities": {
+      "additionalProperties": false,
+      "properties": {
+        "input_formats": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Input Formats",
+          "type": "array"
+        },
+        "supports_compile": {
+          "default": true,
+          "title": "Supports Compile",
+          "type": "boolean"
+        },
+        "supports_cpu_fallback": {
+          "default": false,
+          "title": "Supports Cpu Fallback",
+          "type": "boolean"
+        },
+        "supports_node_placement": {
+          "default": false,
+          "title": "Supports Node Placement",
+          "type": "boolean"
+        },
+        "supports_profiling": {
+          "default": false,
+          "title": "Supports Profiling",
+          "type": "boolean"
+        },
+        "supports_target_validation": {
+          "default": false,
+          "title": "Supports Target Validation",
+          "type": "boolean"
+        }
+      },
+      "title": "BackendCapabilities",
+      "type": "object"
+    },
+    "BackendTarget": {
+      "additionalProperties": false,
+      "properties": {
+        "availability": {
+          "$ref": "#/$defs/Availability"
+        },
+        "backend_name": {
+          "minLength": 1,
+          "title": "Backend Name",
+          "type": "string"
+        },
+        "backend_version": {
+          "minLength": 1,
+          "title": "Backend Version",
+          "type": "string"
+        },
+        "capabilities": {
+          "$ref": "#/$defs/BackendCapabilities"
+        },
+        "device": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DeviceInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "issues": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Issues",
+          "type": "array"
+        },
+        "target_id": {
+          "minLength": 1,
+          "title": "Target Id",
+          "type": "string"
+        },
+        "toolchain": {
+          "$ref": "#/$defs/ToolchainInfo"
+        }
+      },
+      "required": [
+        "target_id",
+        "backend_name",
+        "backend_version",
+        "availability"
+      ],
+      "title": "BackendTarget",
+      "type": "object"
+    },
+    "ConnectionType": {
+      "enum": [
+        "local",
+        "usb",
+        "serial",
+        "network",
+        "simulator"
+      ],
+      "title": "ConnectionType",
+      "type": "string"
+    },
+    "DeviceInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "accelerator": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Accelerator"
+        },
+        "address": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Address"
+        },
+        "connection": {
+          "$ref": "#/$defs/ConnectionType"
+        },
+        "device_id": {
+          "minLength": 1,
+          "title": "Device Id",
+          "type": "string"
+        },
+        "firmware_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Firmware Version"
+        },
+        "metadata": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": "Metadata",
+          "type": "object"
+        },
+        "model": {
+          "minLength": 1,
+          "title": "Model",
+          "type": "string"
+        },
+        "vendor": {
+          "minLength": 1,
+          "title": "Vendor",
+          "type": "string"
+        }
+      },
+      "required": [
+        "device_id",
+        "vendor",
+        "model",
+        "connection"
+      ],
+      "title": "DeviceInfo",
+      "type": "object"
+    },
+    "ToolInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "executable": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Executable"
+        },
+        "metadata": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": "Metadata",
+          "type": "object"
+        },
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "title": "ToolInfo",
+      "type": "object"
+    },
+    "ToolchainInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "compiler": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ToolInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "debugger": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ToolInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "runtime": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ToolInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "sdk": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ToolInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "ToolchainInfo",
+      "type": "object"
+    }
+  },
+  "$id": "https://arona.dev/schemas/v0.1.0/device-probe.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Normalized probe result for a selected backend target.",
+  "properties": {
+    "board_revision": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Board Revision"
+    },
+    "boot_mode": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Boot Mode"
+    },
+    "firmware_commit": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Firmware Commit"
+    },
+    "generated_at": {
+      "format": "date-time",
+      "title": "Generated At",
+      "type": "string"
+    },
+    "probe_status": {
+      "$ref": "#/$defs/Availability",
+      "default": "unavailable"
+    },
+    "schema_version": {
+      "const": "0.1.0",
+      "default": "0.1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "target": {
+      "$ref": "#/$defs/BackendTarget"
+    },
+    "warnings": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Warnings",
+      "type": "array"
+    }
+  },
+  "required": [
+    "generated_at",
+    "target"
+  ],
+  "title": "DeviceProbe",
+  "type": "object"
+}

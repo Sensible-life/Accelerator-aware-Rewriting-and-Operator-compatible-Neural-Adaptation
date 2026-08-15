@@ -1,5 +1,64 @@
 {
   "$defs": {
+    "ActivationSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "accelerator_bytes": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Accelerator Bytes"
+        },
+        "cpu_bytes": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cpu Bytes"
+        },
+        "largest_contiguous_buffer_bytes": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Largest Contiguous Buffer Bytes"
+        },
+        "total_bytes": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Total Bytes"
+        }
+      },
+      "title": "ActivationSummary",
+      "type": "object"
+    },
     "ArtifactKind": {
       "enum": [
         "input_model",
@@ -206,11 +265,28 @@
         "compiler": {
           "$ref": "#/$defs/ToolInfo"
         },
+        "deployment_stages": {
+          "items": {
+            "$ref": "#/$defs/DeploymentStage"
+          },
+          "title": "Deployment Stages",
+          "type": "array"
+        },
         "diagnostics": {
           "items": {
             "$ref": "#/$defs/Diagnostic"
           },
           "title": "Diagnostics",
+          "type": "array"
+        },
+        "epochs": {
+          "$ref": "#/$defs/EpochSummary"
+        },
+        "fallback_operators": {
+          "items": {
+            "$ref": "#/$defs/FallbackOperator"
+          },
+          "title": "Fallback Operators",
           "type": "array"
         },
         "graph": {
@@ -242,6 +318,24 @@
           "anyOf": [
             {
               "$ref": "#/$defs/PerformanceMetrics"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "qdq_boundaries": {
+          "items": {
+            "$ref": "#/$defs/QDQBoundary"
+          },
+          "title": "Qdq Boundaries",
+          "type": "array"
+        },
+        "resources": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ResourceAnalysis"
             },
             {
               "type": "null"
@@ -322,6 +416,60 @@
       "title": "CompilerInvocation",
       "type": "object"
     },
+    "CompilerMemoryPool": {
+      "additionalProperties": false,
+      "properties": {
+        "diagnostics": {
+          "items": {
+            "$ref": "#/$defs/Diagnostic"
+          },
+          "title": "Diagnostics",
+          "type": "array"
+        },
+        "feasible": {
+          "$ref": "#/$defs/FeasibilityStatus"
+        },
+        "kind": {
+          "$ref": "#/$defs/MemoryKind"
+        },
+        "mapped_region_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mapped Region Name"
+        },
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "size_bytes": {
+          "minimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        },
+        "start_address": {
+          "minimum": 0,
+          "title": "Start Address",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "name",
+        "kind",
+        "start_address",
+        "size_bytes",
+        "feasible"
+      ],
+      "title": "CompilerMemoryPool",
+      "type": "object"
+    },
     "ConnectionType": {
       "enum": [
         "local",
@@ -331,6 +479,125 @@
         "simulator"
       ],
       "title": "ConnectionType",
+      "type": "string"
+    },
+    "DeploymentStage": {
+      "additionalProperties": false,
+      "properties": {
+        "artifacts": {
+          "items": {
+            "$ref": "#/$defs/ArtifactRef"
+          },
+          "title": "Artifacts",
+          "type": "array"
+        },
+        "command": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Command",
+          "type": "array"
+        },
+        "duration_ms": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Duration Ms"
+        },
+        "ended_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ended At"
+        },
+        "exit_code": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Exit Code"
+        },
+        "first_error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "First Error"
+        },
+        "previous_warnings": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Previous Warnings",
+          "type": "array"
+        },
+        "stage": {
+          "$ref": "#/$defs/DeploymentStageName"
+        },
+        "started_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Started At"
+        },
+        "status": {
+          "$ref": "#/$defs/StageStatus"
+        }
+      },
+      "required": [
+        "stage",
+        "status"
+      ],
+      "title": "DeploymentStage",
+      "type": "object"
+    },
+    "DeploymentStageName": {
+      "enum": [
+        "parse",
+        "optimize",
+        "partition",
+        "codegen",
+        "scheduling",
+        "link",
+        "signing",
+        "programming",
+        "initialization",
+        "inference",
+        "validation"
+      ],
+      "title": "DeploymentStageName",
       "type": "string"
     },
     "DeviceInfo": {
@@ -472,6 +739,95 @@
       "title": "Diagnostic",
       "type": "object"
     },
+    "EpochSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "accelerator_epochs": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Accelerator Epochs"
+        },
+        "software_epochs": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Software Epochs"
+        },
+        "total_epochs": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Total Epochs"
+        }
+      },
+      "title": "EpochSummary",
+      "type": "object"
+    },
+    "FallbackOperator": {
+      "additionalProperties": false,
+      "properties": {
+        "count": {
+          "minimum": 0,
+          "title": "Count",
+          "type": "integer"
+        },
+        "op_type": {
+          "minLength": 1,
+          "title": "Op Type",
+          "type": "string"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reason"
+        }
+      },
+      "required": [
+        "op_type",
+        "count"
+      ],
+      "title": "FallbackOperator",
+      "type": "object"
+    },
+    "FeasibilityStatus": {
+      "enum": [
+        "feasible",
+        "warning",
+        "infeasible",
+        "unknown"
+      ],
+      "title": "FeasibilityStatus",
+      "type": "string"
+    },
     "GraphSummary": {
       "additionalProperties": false,
       "properties": {
@@ -541,6 +897,66 @@
         "accelerator_cpu_transitions"
       ],
       "title": "GraphSummary",
+      "type": "object"
+    },
+    "MemoryKind": {
+      "enum": [
+        "internal_sram",
+        "external_flash",
+        "external_ram",
+        "tcm",
+        "unknown"
+      ],
+      "title": "MemoryKind",
+      "type": "string"
+    },
+    "MemoryResource": {
+      "additionalProperties": false,
+      "properties": {
+        "attributes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Attributes",
+          "type": "array"
+        },
+        "exists_on_board": {
+          "title": "Exists On Board",
+          "type": "boolean"
+        },
+        "kind": {
+          "$ref": "#/$defs/MemoryKind"
+        },
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "size_bytes": {
+          "minimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        },
+        "source": {
+          "minLength": 1,
+          "title": "Source",
+          "type": "string"
+        },
+        "start_address": {
+          "minimum": 0,
+          "title": "Start Address",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "name",
+        "kind",
+        "start_address",
+        "size_bytes",
+        "exists_on_board",
+        "source"
+      ],
+      "title": "MemoryResource",
       "type": "object"
     },
     "ModelInfo": {
@@ -947,6 +1363,129 @@
       "title": "Placement",
       "type": "string"
     },
+    "QDQBoundary": {
+      "additionalProperties": false,
+      "properties": {
+        "consumer_node_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Consumer Node Id"
+        },
+        "data_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Data Type"
+        },
+        "estimated_transfer_bytes": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Estimated Transfer Bytes"
+        },
+        "producer_node_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Producer Node Id"
+        },
+        "shape": {
+          "items": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": "Shape",
+          "type": "array"
+        },
+        "tensor_name": {
+          "minLength": 1,
+          "title": "Tensor Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tensor_name"
+      ],
+      "title": "QDQBoundary",
+      "type": "object"
+    },
+    "ResourceAnalysis": {
+      "additionalProperties": false,
+      "properties": {
+        "activation": {
+          "$ref": "#/$defs/ActivationSummary"
+        },
+        "board_regions": {
+          "items": {
+            "$ref": "#/$defs/MemoryResource"
+          },
+          "title": "Board Regions",
+          "type": "array"
+        },
+        "compiler_pools": {
+          "items": {
+            "$ref": "#/$defs/CompilerMemoryPool"
+          },
+          "title": "Compiler Pools",
+          "type": "array"
+        },
+        "deployable": {
+          "$ref": "#/$defs/FeasibilityStatus",
+          "default": "unknown"
+        },
+        "diagnostics": {
+          "items": {
+            "$ref": "#/$defs/Diagnostic"
+          },
+          "title": "Diagnostics",
+          "type": "array"
+        },
+        "storage_allocations": {
+          "items": {
+            "$ref": "#/$defs/StorageAllocation"
+          },
+          "title": "Storage Allocations",
+          "type": "array"
+        }
+      },
+      "title": "ResourceAnalysis",
+      "type": "object"
+    },
     "RewriteKind": {
       "enum": [
         "exact",
@@ -1064,6 +1603,93 @@
         "error"
       ],
       "title": "Severity",
+      "type": "string"
+    },
+    "StageStatus": {
+      "enum": [
+        "pending",
+        "running",
+        "succeeded",
+        "warning",
+        "failed",
+        "skipped"
+      ],
+      "title": "StageStatus",
+      "type": "string"
+    },
+    "StorageAllocation": {
+      "additionalProperties": false,
+      "properties": {
+        "alignment": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Alignment"
+        },
+        "diagnostics": {
+          "items": {
+            "$ref": "#/$defs/Diagnostic"
+          },
+          "title": "Diagnostics",
+          "type": "array"
+        },
+        "feasible": {
+          "$ref": "#/$defs/FeasibilityStatus"
+        },
+        "region_name": {
+          "minLength": 1,
+          "title": "Region Name",
+          "type": "string"
+        },
+        "size_bytes": {
+          "minimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        },
+        "start_address": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Start Address"
+        },
+        "storage_class": {
+          "$ref": "#/$defs/StorageClass"
+        }
+      },
+      "required": [
+        "storage_class",
+        "region_name",
+        "size_bytes",
+        "feasible"
+      ],
+      "title": "StorageAllocation",
+      "type": "object"
+    },
+    "StorageClass": {
+      "enum": [
+        "code",
+        "rodata",
+        "weight",
+        "activation",
+        "data_bss",
+        "heap",
+        "stack"
+      ],
+      "title": "StorageClass",
       "type": "string"
     },
     "SupportStatus": {

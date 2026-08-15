@@ -9,6 +9,7 @@
 | JSON Schema | 생산자 | 주요 소비자 | 목적 |
 | --- | --- | --- | --- |
 | `device-discovery.schema.json` | backend registry | CLI, pipeline | 발견된 장치와 toolchain, 사용 가능 여부 표시 |
+| `device-probe.schema.json` | selected backend | CLI, pipeline | 선택된 target의 board revision, firmware commit, boot mode 및 probe warning 표현 |
 | `optimize-request.schema.json` | CLI | optimizer | 모델, target override, 검증 및 최적화 옵션 전달 |
 | `run-report.schema.json` | optimizer | CLI, report generator | 실행 상태, 분석, rewrite, 검증, 비교 및 산출물 표현 |
 
@@ -22,6 +23,11 @@ CLI/reporting 개발용 예제다. 값에 포함된 compiler 버전과 측정치
   위한 정책이다.
 - 시간은 timezone이 포함된 ISO 8601 문자열로 직렬화한다.
 - latency 단위는 millisecond, memory 및 transfer 단위는 byte다.
+- deployment stage는 `parse`, `optimize`, `partition`, `codegen`, `scheduling`,
+  `link`, `signing`, `programming`, `initialization`, `inference`, `validation` 중 하나다.
+- memory resource 주소는 정수 byte address로 저장하고, CLI와 Markdown에서 `0x...`로 표시한다.
+- storage class는 `code`, `rodata`, `weight`, `activation`, `data_bss`, `heap`, `stack`으로
+  정규화한다.
 - ratio는 `0.0` 이상 `1.0` 이하 값이다.
 - SHA-256은 소문자 64자리 hexadecimal 문자열이다.
 - artifact 경로는 해당 run directory를 기준으로 한 POSIX-style 상대 경로를 권장한다.

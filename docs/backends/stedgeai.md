@@ -31,18 +31,26 @@ STM32N6 backend를 MVP의 첫 end-to-end backend로 구현한다. `NUCLEO-H753ZI
 
 ```text
 tests/fixtures/backends/stedgeai/<case-id>/
-├── model.onnx
-├── input.npz
 ├── command.txt
 ├── environment.json
-├── compiler/
-└── expected-analysis.json
+└── compiler.log
 ```
 
 대용량 compiler binary와 vendor redistributable 파일은 저장소에 commit하지 않는다.
 라이선스상 배포 가능한 log, JSON report, 명령, checksum만 fixture로 보관한다. 실제 run
 산출물은 `outputs/<run-id>/compiler/`에 저장한다.
 
-첫 재현 사례는 software fallback이 포함된 quantized ONNX와 exact rewrite 적용 모델의
-두 baseline을 사용한다. 후보 규칙은 `SiLU(x) -> x * Sigmoid(x)`이며, 실제 설치된 compiler
-버전에서 HW/SW mapping 차이가 관찰될 때 최종 fixture로 채택한다.
+현재 Sprint 1/2 fixture는 다음 두 사례를 보존한다.
+
+| case-id | 목적 | 핵심 판정 |
+| --- | --- | --- |
+| `conmamba_fallback` | 1,530 / 2,072 software epoch와 잘못된 HyperRAM activation pool 진단 | compiler scheduling 단계에서 실제 board memory profile과 맞지 않아 deployability 실패 |
+| `conmamba_xip_101` | code/constant를 XIP flash로 옮긴 101-sequence 사례 | activation pool이 실제 SRAM region 안에 있어 deployability feasible |
+
+이 fixture는 원본 ConMamba model/binary를 저장하지 않는다. 재배포 가능한 compiler log,
+실행 command, 환경 metadata만 저장하고, 라이선스상 저장할 수 없는 산출물은 checksum과
+생성 절차로 대체한다.
+
+`src/arona/backends/stedgeai/parsers.py`는 현재 ARONA fixture 형식과 일반적인 사람이 읽는
+log 문구를 정규화한다. 실제 연구실 PC에서 확보한 원문 `stedgeai` log 형식은 같은 contract를
+유지한 채 parser rule만 추가한다.

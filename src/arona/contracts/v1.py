@@ -97,6 +97,54 @@ class Severity(StrEnum):
     ERROR = "error"
 
 
+class DeploymentStageName(StrEnum):
+    PARSE = "parse"
+    OPTIMIZE = "optimize"
+    PARTITION = "partition"
+    CODEGEN = "codegen"
+    SCHEDULING = "scheduling"
+    LINK = "link"
+    SIGNING = "signing"
+    PROGRAMMING = "programming"
+    INITIALIZATION = "initialization"
+    INFERENCE = "inference"
+    VALIDATION = "validation"
+
+
+class StageStatus(StrEnum):
+    PENDING = "pending"
+    RUNNING = "running"
+    SUCCEEDED = "succeeded"
+    WARNING = "warning"
+    FAILED = "failed"
+    SKIPPED = "skipped"
+
+
+class MemoryKind(StrEnum):
+    INTERNAL_SRAM = "internal_sram"
+    EXTERNAL_FLASH = "external_flash"
+    EXTERNAL_RAM = "external_ram"
+    TCM = "tcm"
+    UNKNOWN = "unknown"
+
+
+class StorageClass(StrEnum):
+    CODE = "code"
+    RODATA = "rodata"
+    WEIGHT = "weight"
+    ACTIVATION = "activation"
+    DATA_BSS = "data_bss"
+    HEAP = "heap"
+    STACK = "stack"
+
+
+class FeasibilityStatus(StrEnum):
+    FEASIBLE = "feasible"
+    WARNING = "warning"
+    INFEASIBLE = "infeasible"
+    UNKNOWN = "unknown"
+
+
 class ArtifactKind(StrEnum):
     INPUT_MODEL = "input_model"
     OPTIMIZED_MODEL = "optimized_model"
@@ -168,6 +216,19 @@ class DeviceDiscovery(ContractModel):
     generated_at: datetime
     host: HostEnvironment
     targets: list[BackendTarget] = Field(default_factory=list)
+
+
+class DeviceProbe(ContractModel):
+    """Normalized probe result for a selected backend target."""
+
+    schema_version: ContractVersion = CONTRACT_VERSION
+    generated_at: datetime
+    target: BackendTarget
+    board_revision: str | None = None
+    firmware_commit: str | None = None
+    boot_mode: str | None = None
+    probe_status: Availability = Availability.UNAVAILABLE
+    warnings: list[str] = Field(default_factory=list)
 
 
 class InputModelReference(ContractModel):
@@ -294,15 +355,100 @@ class CompilerInvocation(ContractModel):
     duration_ms: NonNegativeFloat | None = None
 
 
+class DeploymentStage(ContractModel):
+    stage: DeploymentStageName
+    status: StageStatus
+    started_at: datetime | None = None
+    ended_at: datetime | None = None
+    duration_ms: NonNegativeFloat | None = None
+    command: list[NonEmptyString] = Field(default_factory=list)
+    exit_code: int | None = None
+    first_error: str | None = None
+    previous_warnings: list[str] = Field(default_factory=list)
+    artifacts: list[ArtifactRef] = Field(default_factory=list)
+
+
+class MemoryResource(ContractModel):
+    name: NonEmptyString
+    kind: MemoryKind
+    start_address: NonNegativeInt
+    size_bytes: NonNegativeInt
+    attributes: list[str] = Field(default_factory=list)
+    exists_on_board: bool
+    source: NonEmptyString
+
+
+class CompilerMemoryPool(ContractModel):
+    name: NonEmptyString
+    kind: MemoryKind
+    start_address: NonNegativeInt
+    size_bytes: NonNegativeInt
+    mapped_region_name: str | None = None
+    feasible: FeasibilityStatus
+    diagnostics: list[Diagnostic] = Field(default_factory=list)
+
+
+class StorageAllocation(ContractModel):
+    storage_class: StorageClass
+    region_name: NonEmptyString
+    start_address: NonNegativeInt | None = None
+    size_bytes: NonNegativeInt
+    alignment: NonNegativeInt | None = None
+    feasible: FeasibilityStatus
+    diagnostics: list[Diagnostic] = Field(default_factory=list)
+
+
+class ActivationSummary(ContractModel):
+    total_bytes: NonNegativeInt | None = None
+    accelerator_bytes: NonNegativeInt | None = None
+    cpu_bytes: NonNegativeInt | None = None
+    largest_contiguous_buffer_bytes: NonNegativeInt | None = None
+
+
+class ResourceAnalysis(ContractModel):
+    board_regions: list[MemoryResource] = Field(default_factory=list)
+    compiler_pools: list[CompilerMemoryPool] = Field(default_factory=list)
+    storage_allocations: list[StorageAllocation] = Field(default_factory=list)
+    activation: ActivationSummary = Field(default_factory=ActivationSummary)
+    deployable: FeasibilityStatus = FeasibilityStatus.UNKNOWN
+    diagnostics: list[Diagnostic] = Field(default_factory=list)
+
+
+class EpochSummary(ContractModel):
+    total_epochs: NonNegativeInt | None = None
+    accelerator_epochs: NonNegativeInt | None = None
+    software_epochs: NonNegativeInt | None = None
+
+
+class FallbackOperator(ContractModel):
+    op_type: NonEmptyString
+    count: NonNegativeInt
+    reason: str | None = None
+
+
+class QDQBoundary(ContractModel):
+    tensor_name: NonEmptyString
+    producer_node_id: str | None = None
+    consumer_node_id: str | None = None
+    shape: list[int | str | None] = Field(default_factory=list)
+    data_type: str | None = None
+    estimated_transfer_bytes: NonNegativeInt | None = None
+
+
 class CompilationAnalysis(ContractModel):
     analysis_id: NonEmptyString
     status: CompilationStatus
     model_sha256: Sha256
     compiler: ToolInfo
     invocation: CompilerInvocation
+    deployment_stages: list[DeploymentStage] = Field(default_factory=list)
     graph: GraphSummary
+    epochs: EpochSummary = Field(default_factory=EpochSummary)
+    fallback_operators: list[FallbackOperator] = Field(default_factory=list)
+    qdq_boundaries: list[QDQBoundary] = Field(default_factory=list)
     nodes: list[NodeAnalysis] = Field(default_factory=list)
     partitions: list[PartitionAnalysis] = Field(default_factory=list)
+    resources: ResourceAnalysis | None = None
     performance: PerformanceMetrics | None = None
     artifacts: list[ArtifactRef] = Field(default_factory=list)
     diagnostics: list[Diagnostic] = Field(default_factory=list)
