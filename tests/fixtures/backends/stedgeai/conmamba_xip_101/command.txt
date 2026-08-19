@@ -1,0 +1,1 @@
+stedgeai analyze --target stm32n6 --model checksums/conmamba_101_xip.onnx --xip

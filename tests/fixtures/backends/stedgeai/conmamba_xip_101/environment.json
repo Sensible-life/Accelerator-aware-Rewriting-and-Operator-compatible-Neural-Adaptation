@@ -1,0 +1,7 @@
+{
+  "case_id": "conmamba_xip_101",
+  "model_sha256": "metadata-only-unredistributable",
+  "board": "NUCLEO-N657X0-Q",
+  "accelerator": "ST Neural-ART",
+  "note": "XIP case fixture keeps command, logs, and metadata while omitting non-redistributable model/binary artifacts."
+}

@@ -5,10 +5,11 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
-from arona.contracts.v1 import DeviceDiscovery, OptimizeRequest, RunReport
+from arona.contracts.v1 import DeviceDiscovery, DeviceProbe, OptimizeRequest, RunReport
 
 SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "device-discovery.schema.json": DeviceDiscovery,
+    "device-probe.schema.json": DeviceProbe,
     "optimize-request.schema.json": OptimizeRequest,
     "run-report.schema.json": RunReport,
 }

@@ -220,6 +220,20 @@ backend, pipeline과 CLI/reporting이 공유하는 Pydantic 계약은 `src/arona
 uv run arona schema export
 ```
 
+현재 Sprint 1/2 골격은 fixture 기반 baseline 분석을 먼저 지원합니다. 실제 `stedgeai`
+toolchain이 고정되기 전에는 캡처된 compiler log를 명시해 ONNX 모델과 board memory
+feasibility를 연결합니다.
+
+```bash
+uv run arona discover
+uv run arona analyze model.onnx --compiler-log tests/fixtures/backends/stedgeai/conmamba_fallback/compiler.log
+uv run arona optimize model.onnx --compiler-log tests/fixtures/backends/stedgeai/conmamba_fallback/compiler.log
+```
+
+`optimize`는 아직 exact rewrite를 적용하지 않고 baseline compile evidence, deployment
+stage, fallback epoch, memory pool 및 deployability를 구조화합니다. rewrite 채택/원복
+정책은 Sprint 3에서 같은 `RunReport` 계약 위에 추가합니다.
+
 환경 구성, 품질 검사 및 의존성 갱신 방법은 [개발 문서](docs/development.md), 계약의 의미와
 호환성 정책은 [실행 결과 JSON 계약](docs/contracts/backend-cli.md), 직접 의존성의 역할과
 현재 잠금 버전은 [의존성 목록](docs/dependencies.md)을 참고합니다.

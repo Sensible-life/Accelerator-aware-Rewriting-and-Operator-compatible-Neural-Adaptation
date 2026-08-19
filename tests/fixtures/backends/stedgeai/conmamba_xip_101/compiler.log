@@ -1,0 +1,32 @@
+ARONA fixture: ConMamba 101-sequence XIP deployable baseline
+Total epochs: 2072
+NPU epochs: 872
+Software epochs: 1200
+Fallback op: Gather count=390 reason=bookkeeping index path remained on Cortex-M55 software runtime
+Fallback op: Reshape count=240 reason=shape manipulation remained in software partition
+QDQ boundary: encoder/xip/q_out shape=[1, 101, 256] dtype=int8 bytes=25856
+Memory pool: AXISRAM_ACTIVATION kind=internal_sram start=0x34080000 size=1507328
+Memory pool: XSPI1_FLASH_CONST kind=external_flash start=0x70000000 size=8388608
+Storage: code region=XSPI1_FLASH start=0x70000000 size=393216 alignment=16
+Storage: rodata region=XSPI1_FLASH start=0x70060000 size=1048576 alignment=16
+Storage: weight region=XSPI1_FLASH start=0x70160000 size=7340032 alignment=16
+Storage: activation region=AXISRAM1 start=0x34080000 size=1507328 alignment=64
+Storage: data_bss region=AXISRAM2 start=0x34200000 size=262144 alignment=8
+Storage: heap region=AXISRAM2 size=131072 alignment=8
+Storage: stack region=AXISRAM2 size=65536 alignment=8
+Activation total: 1507328
+Activation NPU: 1105920
+Activation CPU: 401408
+Largest contiguous activation buffer: 620000
+Stage: parse status=succeeded
+Stage: optimize status=succeeded
+Stage: partition status=warning
+Stage: codegen status=succeeded
+Stage: scheduling status=succeeded
+Stage: link status=succeeded
+Stage: signing status=succeeded
+Stage: programming status=succeeded
+Stage: initialization status=succeeded
+Stage: inference status=succeeded
+Stage: validation status=succeeded
+Warning: software fallback detected, but XIP placement keeps activation within real board SRAM.

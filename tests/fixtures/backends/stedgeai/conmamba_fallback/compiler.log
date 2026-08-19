@@ -1,0 +1,29 @@
+ARONA fixture: ConMamba fallback baseline
+Total epochs: 2072
+NPU epochs: 542
+Software epochs: 1530
+Fallback op: Gather count=421 reason=bookkeeping index path remained on Cortex-M55 software runtime
+Fallback op: Reshape count=318 reason=shape manipulation prevented Neural-ART fusion
+Fallback op: Concat count=155 reason=layout boundary remained in software partition
+QDQ boundary: encoder/block0/q_out shape=[1, 101, 256] dtype=int8 bytes=25856
+QDQ boundary: encoder/block9/deq_out shape=[1, 101, 512] dtype=float32 bytes=206848
+Memory pool: AXISRAM_ACTIVATION kind=internal_sram start=0x34000000 size=1835008
+Memory pool: HYPERRAM_ACTIVATION kind=hyperram start=0x90000000 size=8388608
+Storage: code region=AXISRAM1 start=0x34000000 size=393216 alignment=16
+Storage: rodata region=XSPI1_FLASH start=0x70000000 size=1048576 alignment=16
+Storage: weight region=XSPI1_FLASH start=0x70100000 size=7340032 alignment=16
+Storage: activation region=HYPERRAM_ACTIVATION start=0x90000000 size=8388608 alignment=64
+Storage: data_bss region=AXISRAM2 start=0x34200000 size=262144 alignment=8
+Storage: heap region=AXISRAM2 size=131072 alignment=8
+Storage: stack region=AXISRAM2 size=65536 alignment=8
+Activation total: 9216000
+Activation NPU: 7192576
+Activation CPU: 2023424
+Largest contiguous activation buffer: 827392
+Stage: parse status=succeeded
+Stage: optimize status=succeeded
+Stage: partition status=warning
+Stage: codegen status=succeeded
+Stage: scheduling status=failed error=Compiler selected HYPERRAM_ACTIVATION, but the NUCLEO-N657X0-Q MVP board profile has no HyperRAM region.
+Warning: software fallback detected in 1530 of 2072 epochs.
+Error: Target memory feasibility failed before link.

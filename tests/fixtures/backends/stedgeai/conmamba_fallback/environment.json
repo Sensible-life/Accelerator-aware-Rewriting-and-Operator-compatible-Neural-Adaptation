@@ -1,0 +1,7 @@
+{
+  "case_id": "conmamba_fallback",
+  "model_sha256": "metadata-only-unredistributable",
+  "board": "NUCLEO-N657X0-Q",
+  "accelerator": "ST Neural-ART",
+  "note": "Fixture preserves redistributable compiler evidence only. Original model/binary is represented by checksum metadata."
+}

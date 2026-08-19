@@ -15,6 +15,10 @@ dist/
 # ARONA run artifacts may contain large generated models and compiler output.
 outputs/
 
+# Local study notes and scratch files.
+ARONA_PROJECT_GUIDE.md
+study/
+
 # Local editor and operating-system files.
 .idea/
 .vscode/
