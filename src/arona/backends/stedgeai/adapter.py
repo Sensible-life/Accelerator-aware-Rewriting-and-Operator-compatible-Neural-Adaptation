@@ -12,7 +12,11 @@ import time
 from datetime import UTC, datetime
 from pathlib import Path
 
-from arona.analysis.memory import annotate_compiler_pools, has_address_overlap
+from arona.analysis.memory import (
+    annotate_compiler_pools,
+    annotate_storage_allocations,
+    has_address_overlap,
+)
 from arona.backends.stedgeai.board_profiles import nucleo_n657x0_q_regions
 from arona.backends.stedgeai.parsers import ParsedStEdgeAiLog, parse_stedgeai_log
 from arona.contracts.v1 import (
@@ -240,9 +244,16 @@ def _detect_version(executable: str) -> str | None:
 def _resource_analysis(parsed: ParsedStEdgeAiLog) -> ResourceAnalysis:
     board_regions = nucleo_n657x0_q_regions()
     compiler_pools = annotate_compiler_pools(list(parsed.compiler_pools), board_regions)
+    storage_allocations = annotate_storage_allocations(
+        list(parsed.storage_allocations),
+        compiler_pools,
+        board_regions,
+    )
     diagnostics: list[Diagnostic] = []
     for pool in compiler_pools:
         diagnostics.extend(pool.diagnostics)
+    for allocation in storage_allocations:
+        diagnostics.extend(allocation.diagnostics)
 
     if has_address_overlap(board_regions):
         diagnostics.append(
@@ -257,13 +268,17 @@ def _resource_analysis(parsed: ParsedStEdgeAiLog) -> ResourceAnalysis:
     deployable = (
         FeasibilityStatus.INFEASIBLE
         if any(pool.feasible == FeasibilityStatus.INFEASIBLE for pool in compiler_pools)
+        or any(
+            allocation.feasible == FeasibilityStatus.INFEASIBLE
+            for allocation in storage_allocations
+        )
         else FeasibilityStatus.FEASIBLE
     )
 
     return ResourceAnalysis(
         board_regions=board_regions,
         compiler_pools=compiler_pools,
-        storage_allocations=list(parsed.storage_allocations),
+        storage_allocations=storage_allocations,
         activation=ActivationSummary(
             total_bytes=parsed.activation_total_bytes,
             accelerator_bytes=parsed.activation_accelerator_bytes,

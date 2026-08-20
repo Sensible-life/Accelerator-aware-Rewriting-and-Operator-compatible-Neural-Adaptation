@@ -1,0 +1,29 @@
+{
+  "total_epochs": 2072,
+  "accelerator_epochs": 542,
+  "software_epochs": 1530,
+  "deployable": "infeasible",
+  "largest_contiguous_buffer_bytes": 827392,
+  "fallback_operators": {
+    "Gather": 421,
+    "Reshape": 318,
+    "Concat": 155
+  },
+  "compiler_pools": {
+    "AXISRAM_ACTIVATION": "feasible",
+    "HYPERRAM_ACTIVATION": "infeasible"
+  },
+  "storage_allocations": {
+    "code": "feasible",
+    "rodata": "feasible",
+    "weight": "feasible",
+    "activation": "infeasible",
+    "data_bss": "feasible",
+    "heap": "feasible",
+    "stack": "feasible"
+  },
+  "diagnostic_codes": [
+    "memory_pool_not_on_board",
+    "storage_pool_not_feasible"
+  ]
+}
