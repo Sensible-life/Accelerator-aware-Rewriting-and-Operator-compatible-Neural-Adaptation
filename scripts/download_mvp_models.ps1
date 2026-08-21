@@ -2,6 +2,8 @@ $ErrorActionPreference = "Stop"
 
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
 $downloadDirectory = Join-Path $repositoryRoot "models\downloads"
+$demoModel = Join-Path $repositoryRoot "models\mobilenetv2-demo.onnx"
+$demoInputDirectory = Join-Path $repositoryRoot "inputs\demo"
 
 $models = @(
     @{
@@ -43,3 +45,22 @@ foreach ($model in $models) {
     Move-Item -LiteralPath $partial -Destination $destination -Force
     Write-Host "Downloaded and verified $($model.Name)"
 }
+
+$sourceModel = Join-Path $downloadDirectory "mobilenetv2_a035_128_food101_qdq.onnx"
+$python = Join-Path $repositoryRoot ".venv\Scripts\python.exe"
+if (-not (Test-Path -LiteralPath $python)) {
+    $python = "python"
+}
+& $python (Join-Path $repositoryRoot "scripts\create_terminal_argmax_variant.py") $sourceModel $demoModel
+if ($LASTEXITCODE -ne 0) {
+    throw "Failed to create models\mobilenetv2-demo.onnx"
+}
+
+New-Item -ItemType Directory -Path $demoInputDirectory -Force | Out-Null
+$manifest = Join-Path $demoInputDirectory "README.txt"
+Set-Content -LiteralPath $manifest -Encoding UTF8 -Value @(
+    "ARONA checkpoint 4 deterministic validation inputs.",
+    "The current terminal ArgMax validator uses seeded generated tensors.",
+    "This directory exists to keep the CLI validation-input contract stable."
+)
+Write-Host "Prepared models\mobilenetv2-demo.onnx and inputs\demo"

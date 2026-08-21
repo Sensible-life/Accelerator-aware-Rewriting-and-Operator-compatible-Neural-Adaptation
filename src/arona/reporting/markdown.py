@@ -1,6 +1,6 @@
 """Markdown report rendering."""
 
-from arona.contracts.v1 import CompilationAnalysis, RunReport
+from arona.contracts.v1 import CompilationAnalysis, DeploymentResult, RunReport, ToolInfo
 
 
 def render_markdown_report(report: RunReport) -> str:
@@ -16,11 +16,15 @@ def render_markdown_report(report: RunReport) -> str:
         "## Target",
         "",
         f"- Backend: `{report.target.backend_name}`",
+        f"- Backend version: `{report.target.backend_version}`",
         f"- Board: `{report.target.device.model if report.target.device else 'unknown'}`",
         (
             "- Accelerator: "
             f"`{report.target.device.accelerator if report.target.device else 'unknown'}`"
         ),
+        (f"- SDK: `{_format_tool(report.target.toolchain.sdk)}`"),
+        (f"- Compiler: `{_format_tool(report.target.toolchain.compiler)}`"),
+        (f"- Debugger/programmer: `{_format_tool(report.target.toolchain.debugger)}`"),
     ]
     if report.baseline is not None:
         lines.extend(_render_analysis("Baseline", report.baseline))
@@ -56,6 +60,9 @@ def render_markdown_report(report: RunReport) -> str:
             ]
         )
         lines.extend(f"- Reason: {reason}" for reason in report.decision.reasons)
+
+    if report.deployment is not None:
+        lines.extend(_render_deployment(report.deployment))
     return "\n".join(lines) + "\n"
 
 
@@ -101,3 +108,85 @@ def _render_analysis(label: str, analysis: CompilationAnalysis) -> list[str]:
                 f"{pool.mapped_region_name or ''} | `{pool.feasible}` |"
             )
     return lines
+
+
+def _render_deployment(deployment: DeploymentResult) -> list[str]:
+    lines = [
+        "",
+        "## Board Deployment",
+        "",
+        f"- Application: `{deployment.application}`",
+        f"- Board: `{deployment.board}`",
+        f"- Status: `{deployment.status}`",
+        f"- Serial port: `{deployment.serial_port or 'unknown'}`",
+        f"- Boot mode: `{deployment.boot_mode or 'unknown'}`",
+    ]
+    if deployment.reason:
+        lines.append(f"- Reason: {deployment.reason}")
+
+    artifacts = [artifact for artifact in [deployment.model, *deployment.firmware] if artifact]
+    if artifacts:
+        lines.extend(
+            [
+                "",
+                "### Deployment Artifacts",
+                "",
+                "| Kind | Path | SHA-256 | Size bytes |",
+                "| --- | --- | --- | ---: |",
+            ]
+        )
+        for artifact in artifacts:
+            lines.append(
+                f"| `{artifact.kind}` | `{artifact.path}` | "
+                f"`{artifact.sha256 or ''}` | {artifact.size_bytes or ''} |"
+            )
+
+    if deployment.stages:
+        lines.extend(
+            [
+                "",
+                "### Deployment Stages",
+                "",
+                "| Stage | Status | Exit Code | Duration ms | First Error |",
+                "| --- | --- | ---: | ---: | --- |",
+            ]
+        )
+        for stage in deployment.stages:
+            lines.append(
+                f"| `{stage.stage}` | `{stage.status}` | "
+                f"{stage.exit_code if stage.exit_code is not None else ''} | "
+                f"{stage.duration_ms if stage.duration_ms is not None else ''} | "
+                f"{stage.first_error or ''} |"
+            )
+
+    if deployment.observations:
+        latencies = [
+            observation.latency_ms
+            for observation in deployment.observations
+            if observation.latency_ms is not None
+        ]
+        lines.extend(
+            [
+                "",
+                "### Target Observations",
+                "",
+                "- Successful observations: "
+                f"{sum(item.success for item in deployment.observations)}"
+                f"/{len(deployment.observations)}",
+            ]
+        )
+        if latencies:
+            lines.extend(
+                [
+                    f"- Latency min ms: {min(latencies):.3f}",
+                    f"- Latency mean ms: {sum(latencies) / len(latencies):.3f}",
+                    f"- Latency max ms: {max(latencies):.3f}",
+                ]
+            )
+    return lines
+
+
+def _format_tool(tool: ToolInfo | None) -> str:
+    if tool is None:
+        return "unknown"
+    return f"{tool.name} {tool.version}".strip()

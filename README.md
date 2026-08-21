@@ -6,7 +6,7 @@
 > 대상 엣지 장치 또는 장치에 연결된 개발 PC에서 하드웨어와 컴파일러를 자동으로 인식하고, ONNX 모델의 미지원 연산·CPU fallback·메모리 및 배포 제약을 분석해 안전한 최적화 방안을 적용하는 로컬 도구
 
 > [!NOTE]
-> 현재 저장소는 MVP 설계 및 초기 개발 단계입니다. 아래 기능은 2026년 8월 27일 18:00 제출을 목표로 구현할 범위를 설명합니다.
+> 현재 저장소는 2026년 8월 checkpoint 4 제출 후보 기준의 MVP 구현 상태를 설명합니다. 실제 보드 evidence와 모델 binary는 라이선스·용량 때문에 Git에 포함하지 않고, checksum·명령·fixture·재생성 절차로 관리합니다.
 
 ## 문제 정의
 
@@ -135,12 +135,14 @@ CPU fallback 여부는 노드 개수만으로 판단하지 않습니다. 다음 
 ```text
 outputs/<run-id>/
 ├── original-analysis.json
-├── resource-analysis.json
+├── run-report.json
 ├── deployment-analysis.json
 ├── optimized-model.onnx
 ├── optimized-analysis.json
 ├── rewrite-history.json
+├── postprocess.json
 ├── compiler/
+├── deployment/
 ├── validation.json
 └── report.md
 ```
@@ -176,9 +178,9 @@ outputs/<run-id>/
 ## MVP primary backend
 
 Sprint 0의 primary target은 **ST NUCLEO-N657X0-Q의 Neural-ART accelerator**이며,
-`stedgeai` CLI를 첫 `BackendAdapter`로 구현합니다. 실제 연구실 개발 PC에 설치된 compiler,
-SDK, ST-LINK firmware 버전은 baseline compile을 재현한 뒤 고정합니다. 결정과 증거 보관
-규칙은 [ST Edge AI backend 문서](docs/backends/stedgeai.md)에 기록합니다.
+`stedgeai` CLI를 첫 `BackendAdapter`로 구현합니다. 실제 연구실 개발 PC의 compiler, SDK,
+ST-LINK firmware, board revision과 boot mode는 probe/evidence 문서와 fixture metadata로
+고정합니다. 결정과 증거 보관 규칙은 [ST Edge AI backend 문서](docs/backends/stedgeai.md)에 기록합니다.
 
 ### Sprint 0에서 확보한 재현 근거
 
@@ -223,20 +225,50 @@ uv run arona schema export
 현재 MVP 파이프라인은 terminal ArgMax를 안전 조건 아래 외부화하고, ONNX Runtime 동등성과
 baseline/candidate compiler 결과를 모두 통과한 후보만 채택합니다. 캡처 log를 생략하면
 로컬 `stedgeai`를 직접 호출하며, 재현 테스트에서는 원본·후보 log를 각각 지정할 수 있습니다.
+checkpoint 4 CLI는 `--target stedgeai`, `--validation-input`, `--deploy`,
+`--deployment-result` 옵션을 고정했습니다. `--deploy`는 기본적으로 STM32N6
+`generate -> build -> program -> validate` sequence를 실행하고, 이미 검증된
+`deployment-result.json`이 있을 때는 `--deployment-result`로 해당 evidence를 최적화 run
+report에 결합할 수 있습니다.
 
 ```bash
 uv run arona discover
 uv run arona analyze model.onnx --compiler-log tests/fixtures/backends/stedgeai/conmamba_fallback/compiler.log
 uv run arona optimize model-with-terminal-argmax.onnx
 uv run arona optimize model-with-terminal-argmax.onnx \
+  --target stedgeai \
+  --compiler-log tests/fixtures/backends/stedgeai/conmamba_fallback/compiler.log \
+  --candidate-compiler-log tests/fixtures/backends/stedgeai/conmamba_xip_101/compiler.log
+uv run arona optimize model-with-terminal-argmax.onnx \
+  --target stedgeai \
+  --validation-input inputs/demo \
+  --deploy \
+  --application-directory outputs/vendor/STM32N6-GettingStarted-ImageClassification/Application/NUCLEO-N657X0-Q \
+  --model-support-directory outputs/vendor/STM32N6-GettingStarted-ImageClassification/Model \
+  --fsbl outputs/vendor/STM32N6-GettingStarted-ImageClassification/FSBL/ai_fsbl.hex \
   --compiler-log tests/fixtures/backends/stedgeai/conmamba_fallback/compiler.log \
   --candidate-compiler-log tests/fixtures/backends/stedgeai/conmamba_xip_101/compiler.log
 ```
 
+Windows PowerShell에서 ST Edge AI Core를 현재 터미널 세션에 불러오려면 다음을 먼저 실행합니다.
+
+```powershell
+. .\scripts\use_stedgeai.ps1
+stedgeai --version
+```
+
+깨진 설치 후보는 건너뛰며, `ARONA_STEDGEAI_PATH`, `STEDGEAI_CORE_DIR`, `PATH`를 현재 세션에
+설정합니다. 매번 입력하지 않으려면 `-Persist`를 붙여 사용자 환경변수에 저장할 수 있습니다.
+
 결과 디렉터리에는 원본·후보 분석, `optimized-model.onnx`, `postprocess.json`, 10개 입력
-동등성 결과, rewrite 이력, 최종 선택을 담은 JSON과 Markdown 보고서가 생성됩니다. 현재 선정
-모델의 실제 compile은 로컬 Core 2.2.0과 요구 버전 4.0.0의 차이 때문에 실패하며, 이 경우
-파이프라인은 후보를 자동 롤백하고 `decision.selected=baseline`으로 기록합니다.
+동등성 결과, rewrite 이력, 최종 선택을 담은 JSON과 Markdown 보고서가 생성됩니다. deployment
+sequence가 실행되면 `deployment/deployment-result.json`, `deployment-analysis.json`과 board
+실행 상태가 `report.md`에 추가됩니다.
+
+checkpoint 3에서는 ST Edge AI Core 4.0.1 기반 NUCLEO-N657X0-Q fixed-input smoke로
+MobileNetV2 image classification 1,021회, YOLO26n object detection 618회 반복 inference를
+확인했습니다. 이 로컬 evidence는 `outputs/checkpoint3/` 아래에 보관되는 실행 산출물이라
+Git에는 포함하지 않으며, 재현 절차와 제출 데모 흐름은 [MVP demo 문서](docs/demo.md)를 참고합니다.
 
 환경 구성, 품질 검사 및 의존성 갱신 방법은 [개발 문서](docs/development.md), 계약의 의미와
 호환성 정책은 [실행 결과 JSON 계약](docs/contracts/backend-cli.md), 직접 의존성의 역할과
