@@ -20,15 +20,16 @@ from arona.analysis.memory import (
 from arona.backends.stedgeai.board_profiles import nucleo_n657x0_q_regions
 from arona.backends.stedgeai.parsers import ParsedStEdgeAiLog, parse_stedgeai_log
 from arona.contracts.v1 import (
+    ActivationSummary,
     ArtifactKind,
     ArtifactRef,
-    ActivationSummary,
     Availability,
     BackendCapabilities,
     BackendTarget,
     CompilationAnalysis,
     CompilationStatus,
     CompilerInvocation,
+    ConnectionType,
     DeviceInfo,
     DeviceProbe,
     Diagnostic,
@@ -38,8 +39,8 @@ from arona.contracts.v1 import (
     ResourceAnalysis,
     Severity,
     StageStatus,
-    ToolInfo,
     ToolchainInfo,
+    ToolInfo,
     ValidationResult,
     ValidationStatus,
 )
@@ -53,12 +54,18 @@ class StEdgeAiAdapter:
     backend_version = "0.1.0"
 
     def probe(self) -> DeviceProbe:
-        executable = shutil.which("stedgeai")
+        path_executable = shutil.which("stedgeai")
+        executable = _resolve_stedgeai_executable()
         version = _detect_version(executable) if executable else os.getenv("ARONA_STEDGEAI_VERSION")
         availability = Availability.AVAILABLE if executable or version else Availability.UNAVAILABLE
         warnings: list[str] = []
         if executable is None:
-            warnings.append("stedgeai executable was not found on PATH.")
+            warnings.append("stedgeai executable was not found.")
+        elif path_executable is None:
+            warnings.append(
+                "stedgeai was found outside PATH; set ARONA_STEDGEAI_PATH or update PATH "
+                f"to make the toolchain location explicit: {executable}"
+            )
 
         target = BackendTarget(
             target_id="stedgeai:stm32n6:local",
@@ -70,7 +77,7 @@ class StEdgeAiAdapter:
                 vendor="STMicroelectronics",
                 model="NUCLEO-N657X0-Q",
                 accelerator="ST Neural-ART",
-                connection="usb",
+                connection=ConnectionType.USB,
                 address=os.getenv("ARONA_ST_CONNECTION"),
                 firmware_version=os.getenv("ARONA_STLINK_VERSION"),
                 metadata={
@@ -114,13 +121,23 @@ class StEdgeAiAdapter:
     def compile(self, model: Path, output_directory: Path, timeout_seconds: int = 120) -> Path:
         """Run ``stedgeai analyze`` and capture stdout/stderr in a log file."""
 
-        executable = shutil.which("stedgeai")
+        executable = _resolve_stedgeai_executable()
         if executable is None:
-            raise FileNotFoundError("stedgeai executable was not found on PATH")
+            raise FileNotFoundError(
+                "stedgeai executable was not found; set ARONA_STEDGEAI_PATH or update PATH"
+            )
 
         output_directory.mkdir(parents=True, exist_ok=True)
         log_path = output_directory / "stedgeai.log"
-        command = [executable, "analyze", "--target", "stm32n6", "--model", str(model)]
+        command = [
+            executable,
+            "analyze",
+            "--target",
+            "stm32n6",
+            "--model",
+            str(model),
+            "--st-neural-art",
+        ]
         started = time.monotonic()
         completed = subprocess.run(
             command,
@@ -221,6 +238,41 @@ def _tool(name: str, version: str | None) -> ToolInfo | None:
     if version is None:
         return None
     return ToolInfo(name=name, version=version)
+
+
+def _resolve_stedgeai_executable() -> str | None:
+    """Find stedgeai from explicit configuration, PATH, or an X-CUBE-AI pack."""
+
+    configured = os.getenv("ARONA_STEDGEAI_PATH")
+    if configured:
+        configured_path = Path(configured).expanduser()
+        if configured_path.is_file():
+            return str(configured_path.resolve())
+
+    executable = shutil.which("stedgeai")
+    if executable:
+        return executable
+
+    core_directory = os.getenv("STEDGEAI_CORE_DIR")
+    if core_directory:
+        candidate = Path(core_directory) / "Utilities" / "windows" / "stedgeai.exe"
+        if candidate.is_file():
+            return str(candidate.resolve())
+
+    user_directory = Path(os.getenv("USERPROFILE", str(Path.home())))
+    pack_root = (
+        user_directory / "STM32Cube" / "Repository" / "Packs" / "STMicroelectronics" / "X-CUBE-AI"
+    )
+    candidates = list(pack_root.glob("*/Utilities/windows/stedgeai.exe"))
+    if not candidates:
+        return None
+    newest = max(candidates, key=_xcube_ai_version_key)
+    return str(newest.resolve())
+
+
+def _xcube_ai_version_key(executable: Path) -> tuple[int, ...]:
+    version = executable.parents[2].name
+    return tuple(int(part) if part.isdigit() else -1 for part in version.split("."))
 
 
 def _detect_version(executable: str) -> str | None:

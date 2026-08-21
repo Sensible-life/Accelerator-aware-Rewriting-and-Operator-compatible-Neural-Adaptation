@@ -5,6 +5,7 @@ import onnx
 from onnx import TensorProto, helper
 
 from arona.backends.stedgeai import StEdgeAiAdapter
+from arona.backends.stedgeai.adapter import _resolve_stedgeai_executable
 from arona.backends.stedgeai.parsers import parse_stedgeai_log
 from arona.contracts.v1 import CompilationAnalysis
 from arona.onnx_frontend.loader import load_onnx_model_info
@@ -13,15 +14,21 @@ ROOT = Path(__file__).parents[1]
 FIXTURES = ROOT / "tests/fixtures/backends/stedgeai"
 
 
+def test_explicit_stedgeai_path_is_discovered(monkeypatch, tmp_path: Path) -> None:
+    executable = tmp_path / "stedgeai.exe"
+    executable.touch()
+    monkeypatch.setenv("ARONA_STEDGEAI_PATH", str(executable))
+
+    assert _resolve_stedgeai_executable() == str(executable.resolve())
+
+
 def test_conmamba_fallback_epoch_and_memory_fixture() -> None:
     parsed = parse_stedgeai_log(FIXTURES / "conmamba_fallback/compiler.log")
     expected = _expected("conmamba_fallback")
 
     assert parsed.epochs.total_epochs == expected["total_epochs"]
     assert parsed.epochs.software_epochs == expected["software_epochs"]
-    assert parsed.largest_contiguous_buffer_bytes == expected[
-        "largest_contiguous_buffer_bytes"
-    ]
+    assert parsed.largest_contiguous_buffer_bytes == expected["largest_contiguous_buffer_bytes"]
     assert any(pool.name == "HYPERRAM_ACTIVATION" for pool in parsed.compiler_pools)
 
 
@@ -92,11 +99,7 @@ def _storage_feasibility(analysis: CompilationAnalysis) -> dict[str, str]:
 def _diagnostic_codes(analysis: CompilationAnalysis) -> set[str]:
     resources = analysis.resources
     assert resources is not None
-    return {
-        diagnostic.code
-        for diagnostic in resources.diagnostics
-        if diagnostic.code is not None
-    }
+    return {diagnostic.code for diagnostic in resources.diagnostics if diagnostic.code is not None}
 
 
 def _write_three_node_model(path: Path) -> None:

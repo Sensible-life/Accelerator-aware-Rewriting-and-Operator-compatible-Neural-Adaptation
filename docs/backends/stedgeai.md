@@ -6,26 +6,34 @@
 - Accelerator: ST Neural-ART
 - Backend ID: `stedgeai`
 - Vendor compiler entry point: `stedgeai`
-- Host mode: NUCLEO board가 USB/ST-LINK로 연결된 개발 PC
+- Host mode: NUCLEO board가 USB/ST-LINK와 `COM5`로 연결된 개발 PC
 
 STM32N6 backend를 MVP의 첫 end-to-end backend로 구현한다. `NUCLEO-H753ZI`는 필요할
 때 CPU-only 비교 대상으로 사용하고, Renesas EK-RA8P1 backend는 primary pipeline이
 안정화된 뒤 추가한다.
 
-## 아직 고정해야 하는 로컬 환경 값
+## 2026-08-21 로컬 환경 값
 
-다음 값은 연구실 개발 PC에서 실제 설치와 baseline compile을 수행한 뒤 기록한다. 문서의
-빈 값을 추정 버전으로 채우지 않는다.
+STM32CubeProgrammer의 probe/SWD 결과와 각 도구의 실제 `--version` 출력으로 기록했다.
 
-| 항목 | 고정 값 |
+| 항목 | 확인 값 |
 | --- | --- |
-| ST Edge AI Core / `stedgeai` | TBD |
-| STM32Cube AI Studio 또는 X-CUBE-AI | TBD |
-| STM32CubeProgrammer | TBD |
-| STM32CubeCLT / compiler | TBD |
-| ST-LINK firmware | TBD |
-| NUCLEO board revision | TBD |
+| ST Edge AI Core / `stedgeai` | 로컬 `2.2.0-20266`; 선정 모델 요구 버전 `4.0.0` |
+| STM32Cube AI Studio 또는 X-CUBE-AI | X-CUBE-AI `10.2.0-RC1`; AI Studio 미설치 |
+| STM32CubeProgrammer | `2.22.0` |
+| STM32CubeIDE / GNU Arm compiler | IDE `2.0.0`; GNU Arm Embedded `13.3.rel1` |
+| ST-LINK firmware | `V3J15M6`, SN `004000173234510E37333934` |
+| NUCLEO board revision | STM32N657 silicon `Rev Z`; PCB revision은 미확인 |
 | validation firmware commit/hash | TBD |
+
+현재 `stedgeai.exe`는 PATH가 아니라 다음 X-CUBE-AI pack 안에 있다.
+
+```text
+C:\Users\ESLAB\STM32Cube\Repository\Packs\STMicroelectronics\X-CUBE-AI\10.2.0\Utilities\windows\stedgeai.exe
+```
+
+ARONA는 `ARONA_STEDGEAI_PATH`, PATH, `STEDGEAI_CORE_DIR`, 설치된 X-CUBE-AI pack 순서로
+실행 파일을 탐지한다. 선정 모델의 live compile은 ST Edge AI Core 4.0.0 설치 후 재개한다.
 
 ## 예정된 증거 보관 위치
 

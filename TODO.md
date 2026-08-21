@@ -1,7 +1,7 @@
 # ARONA 4일 MVP 구현 계획
 
-> 기간: 2026-08-22 ~ 2026-08-25  
-> 제출 전 버퍼: 2026-08-26  
+> 기간: 2026-08-21 ~ 2026-08-24
+> 제출 전 버퍼: 2026-08-25 ~ 2026-08-26
 > 제출: 2026-08-27 18:00
 
 ## 1. MVP 목표
@@ -78,7 +78,7 @@ ONNX QDQ 모델
 - 공식 기준 internal RAM 약 722.04 KiB, external RAM 0 KiB, weights Flash 약 2,341.32 KiB
 - STM32N6570-DK 참고 inference time 약 20.99 ms
 - 필수 두 번째 탑재 모델이며 MobileNet golden path가 열린 직후 analyze/compile/deploy한다.
-- 외부 Ultralytics/ST fork의 AGPL-3.0/Enterprise 라이선스 조건을 확인하고 출처·checksum을 기록한다.
+- 외부 Ultralytics/ST fork의 AGPL-3.0 라이선스 조건을 확인하고 출처·checksum을 기록한다.
 - YOLO graph rewrite, NMS 삽입, 재학습 또는 정확도 튜닝은 하지 않는다. 분석·컴파일·배포
   회귀와 보드 smoke test까지 수행한다.
 
@@ -119,14 +119,13 @@ ONNX QDQ 모델
 
 ### 오전: 환경과 모델 고정
 
-- [ ] ST Edge AI Core, X-CUBE-AI, STM32CubeProgrammer, STM32CubeIDE/CLT, ST-LINK firmware 버전을 기록한다.
-- [ ] `stedgeai supported-ops -t onnx --with-report` 결과를 fixture로 보존한다.
-- [ ] NUCLEO-N657X0-Q를 COM5/ST-LINK/SWD로 식별하고 MCU·revision·전압을 기록한다.
+- [x] ST Edge AI Core, X-CUBE-AI, STM32CubeProgrammer, STM32CubeIDE/CLT, ST-LINK firmware 버전을 기록한다.
+- [x] `stedgeai supported-ops -t onnx --with-report` 결과를 fixture로 보존한다.
+- [x] NUCLEO-N657X0-Q를 COM5/ST-LINK/SWD로 식별하고 MCU·revision·전압을 기록한다.
 - [ ] boot mode와 카메라 연결 상태를 기록한다.
-- [ ] 선정한 MobileNetV2 128 및 YOLO26n 256 ONNX QDQ 모델을 공식 저장소에서 확보한다.
-- [ ] 각 모델의 원본 URL, 라이선스, SHA-256, input/output name·shape·dtype를 manifest에 기록한다.
-- [ ] 모델 binary는 라이선스와 용량을 확인한 뒤 commit 여부를 결정하고, 미포함 시 다운로드
-  스크립트와 checksum만 저장한다.
+- [x] 선정한 MobileNetV2 128 및 YOLO26n 256 ONNX QDQ 모델을 공식 저장소에서 확보한다.
+- [x] 각 모델의 원본 URL, 라이선스, SHA-256, input/output name·shape·dtype를 manifest에 기록한다.
+- [x] 모델 binary는 라이선스와 용량을 확인한 뒤 commit 여부를 결정하고, 미포함 시 다운로드 스크립트와 checksum만 저장한다.
 
 ### 오후: ARONA 밖에서 먼저 golden deployment
 
@@ -143,6 +142,11 @@ ONNX QDQ 모델
 - [ ] 실패 시 Day 2 rewrite 개발을 시작하지 않고 설치·boot mode·firmware·전원 문제 해결에 집중한다.
 - [ ] Day 1 종료까지 보드 경로가 열리지 않으면 최종 시연 범위를 `compile + generated artifact`로
   축소하고 “실기기 미검증”을 명시한다.
+
+### Commit checkpoint 1
+
+- [x] 환경·보드 evidence, 모델 manifest/download script, toolchain 자동 탐지 테스트가 함께 통과하면 커밋한다.
+- 권장 메시지: `chore: pin MVP models and capture NUCLEO day1 evidence`
 
 ## 5. Day 2 — 최소 최적화와 검증 loop
 
@@ -185,6 +189,11 @@ ONNX QDQ 모델
 - [ ] optimized model과 postprocess를 합친 end-to-end 결과가 10/10 일치한다.
 - [ ] 개선이 없으면 수치를 꾸미지 않고 rule/모델 조합을 폐기한다.
 
+### Commit checkpoint 2
+
+- [ ] rewrite, 동등성 검증, compiler-in-the-loop 테스트가 모두 통과하면 커밋한다.
+- 권장 메시지: `feat: add compiler-validated terminal argmax rewrite`
+
 ## 6. Day 3 — 배포 통합과 보드 검증
 
 목표: ARONA가 선택한 optimized model을 실제 NUCLEO에 올리고 실행 증거를 남긴다.
@@ -211,6 +220,11 @@ ONNX QDQ 모델
 
 - [ ] ARONA가 생성한 optimized model이 NUCLEO-N657X0-Q에서 실행된다.
 - [ ] 한 run directory에 원본/최적화 분석, rewrite, validation, compiler, deployment 증거가 모두 있다.
+
+### Commit checkpoint 3
+
+- [ ] 두 선정 모델의 보드 실행 증거와 deploy wrapper 회귀 테스트를 확보한 뒤 커밋한다.
+- 권장 메시지: `feat: deploy MVP models to NUCLEO-N657X0-Q`
 
 ## 7. Day 4 — CLI, 보고서, 회귀 테스트와 시연 고정
 
@@ -263,6 +277,11 @@ ONNX QDQ 모델
 - [ ] 실패 경로에서도 baseline 유지와 원인이 보고됨
 - [ ] 테스트·정적 검사 전체 통과
 - [ ] README의 미구현 주장, 출력 목록, CLI 예시를 실제 동작과 일치시킴
+
+### Commit checkpoint 4
+
+- [ ] 깨끗한 checkout 재현과 전체 품질 gate 통과 후 제출 후보를 커밋한다.
+- 권장 메시지: `release: finalize reproducible ARONA MVP demo`
 
 ## 8. 리스크와 즉시 대체안
 

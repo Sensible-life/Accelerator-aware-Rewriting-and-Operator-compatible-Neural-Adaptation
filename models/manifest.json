@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-08-21T17:00:00+09:00",
+  "target": {
+    "board": "NUCLEO-N657X0-Q",
+    "mcu": "STM32N657",
+    "accelerator": "ST Neural-ART",
+    "serial_port": "COM5"
+  },
+  "binary_policy": "download-only; models/downloads is gitignored",
+  "models": [
+    {
+      "id": "mobilenetv2-a035-food101-128-qdq",
+      "local_path": "models/downloads/mobilenetv2_a035_128_food101_qdq.onnx",
+      "source_url": "https://github.com/STMicroelectronics/stm32ai-modelzoo/blob/main/image_classification/mobilenetv2/ST_pretrainedmodel_public_dataset/food101/mobilenetv2_a035_128_fft/mobilenetv2_a035_128_fft_qdq_w4_53.32%25_w8_46.68%25_a8_100%25_acc_64.61.onnx",
+      "download_url": "https://media.githubusercontent.com/media/STMicroelectronics/stm32ai-modelzoo/main/image_classification/mobilenetv2/ST_pretrainedmodel_public_dataset/food101/mobilenetv2_a035_128_fft/mobilenetv2_a035_128_fft_qdq_w4_53.32%25_w8_46.68%25_a8_100%25_acc_64.61.onnx",
+      "license": {
+        "name": "SLA0044 Rev5",
+        "spdx": "LicenseRef-SLA0044",
+        "url": "https://github.com/STMicroelectronics/stm32ai-modelzoo/blob/main/image_classification/mobilenetv2/ST_pretrainedmodel_public_dataset/LICENSE.md",
+        "note": "Use and execution are restricted to STMicroelectronics microcontrollers or microprocessors."
+      },
+      "sha256": "f998c183a0c117a18c10e1f8d4595e5456aeca9dc933c109ca8e795604188a61",
+      "size_bytes": 637534,
+      "onnx": {
+        "checker": "passed with onnx 1.22.0",
+        "ir_version": 10,
+        "opset": 21,
+        "node_count": 318,
+        "input": {
+          "name": "input_layer",
+          "shape": ["unk__867", 3, 128, 128],
+          "dtype": "float32",
+          "layout": "NCHW"
+        },
+        "output": {
+          "name": "dense",
+          "shape": ["unk__868", 101],
+          "dtype": "float32"
+        }
+      },
+      "reference": {
+        "stedgeai_core": "4.0.0",
+        "internal_ram_kib": 240.0,
+        "external_ram_kib": 0.0,
+        "weights_flash_kib": 396.44,
+        "inference_ms_stm32n6570_dk": 2.65
+      },
+      "local_stedgeai_attempt": {
+        "version": "2.2.0-20266",
+        "status": "blocked_by_tool_version",
+        "exit_code": 1,
+        "error": "Your model ir_version 10 is higher than the checker's (9)."
+      }
+    },
+    {
+      "id": "yolo26n-coco-person-256-qdq-int8",
+      "local_path": "models/downloads/yolo26n_256_coco_person_qdq_int8.onnx",
+      "source_url": "https://github.com/stm32-hotspot/ultralytics/blob/main/examples/YOLOv8-STEdgeAI/stedgeai_models/object_detection/yolo26/yolo26_256_qdq_int8_od_coco-person-st.onnx",
+      "download_url": "https://raw.githubusercontent.com/stm32-hotspot/ultralytics/main/examples/YOLOv8-STEdgeAI/stedgeai_models/object_detection/yolo26/yolo26_256_qdq_int8_od_coco-person-st.onnx",
+      "license": {
+        "name": "GNU Affero General Public License v3.0",
+        "spdx": "AGPL-3.0-only",
+        "url": "https://github.com/stm32-hotspot/ultralytics/blob/main/LICENSE",
+        "note": "Keep the model binary out of this MIT repository; review AGPL obligations before redistribution."
+      },
+      "sha256": "8e3197754d64337db74bde0782293981a40d6a2dad1ebff405e323b81399282e",
+      "size_bytes": 2971880,
+      "onnx": {
+        "checker": "passed with onnx 1.22.0",
+        "ir_version": 8,
+        "opset": 17,
+        "node_count": 1336,
+        "input": {
+          "name": "images",
+          "shape": [1, 3, 256, 256],
+          "dtype": "float32",
+          "layout": "NCHW"
+        },
+        "output": {
+          "name": "output0",
+          "shape": [1, 5, 1344],
+          "dtype": "float32"
+        }
+      },
+      "reference": {
+        "stedgeai_core": "4.0.0",
+        "internal_ram_kib": 722.04,
+        "external_ram_kib": 0.0,
+        "weights_flash_kib": 2341.32,
+        "inference_ms_stm32n6570_dk": 20.99,
+        "ap_coco_person_percent": 52.7
+      },
+      "local_stedgeai_attempt": {
+        "version": "2.2.0-20266",
+        "status": "blocked_by_tool_version",
+        "exit_code": 1,
+        "error": "Exported ONNX could be malformed since ONNX shape inference fails."
+      }
+    }
+  ]
+}
