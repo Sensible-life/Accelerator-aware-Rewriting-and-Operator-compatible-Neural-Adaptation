@@ -22,6 +22,23 @@ def test_explicit_stedgeai_path_is_discovered(monkeypatch, tmp_path: Path) -> No
     assert _resolve_stedgeai_executable() == str(executable.resolve())
 
 
+def test_captured_command_failure_is_preserved(tmp_path: Path) -> None:
+    compiler_log = FIXTURES / "core_2_2_ir_version_failure/compiler.log"
+    model_path = tmp_path / "model.onnx"
+    _write_three_node_model(model_path)
+    adapter = StEdgeAiAdapter()
+
+    parsed = parse_stedgeai_log(compiler_log)
+    analysis = adapter.parse(compiler_log, load_onnx_model_info(model_path), adapter.probe().target)
+
+    assert parsed.exit_code == 4294967295
+    assert parsed.duration_ms == 11687.0
+    assert analysis.status == "failed"
+    assert analysis.invocation.exit_code == 4294967295
+    assert analysis.invocation.duration_ms == 11687.0
+    assert any("ir_version 10" in item.message for item in analysis.diagnostics)
+
+
 def test_conmamba_fallback_epoch_and_memory_fixture() -> None:
     parsed = parse_stedgeai_log(FIXTURES / "conmamba_fallback/compiler.log")
     expected = _expected("conmamba_fallback")

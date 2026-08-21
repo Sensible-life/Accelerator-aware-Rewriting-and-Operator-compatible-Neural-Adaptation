@@ -1,0 +1,63 @@
+{
+  "$id": "https://arona.dev/schemas/v0.1.0/postprocess.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Post-processing needed after externalizing a terminal ONNX ArgMax node.",
+  "properties": {
+    "axis": {
+      "title": "Axis",
+      "type": "integer"
+    },
+    "input_name": {
+      "minLength": 1,
+      "title": "Input Name",
+      "type": "string"
+    },
+    "keepdims": {
+      "title": "Keepdims",
+      "type": "boolean"
+    },
+    "operation": {
+      "const": "ArgMax",
+      "default": "ArgMax",
+      "title": "Operation",
+      "type": "string"
+    },
+    "output_data_type": {
+      "const": "int64",
+      "default": "int64",
+      "title": "Output Data Type",
+      "type": "string"
+    },
+    "output_name": {
+      "minLength": 1,
+      "title": "Output Name",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "0.1.0",
+      "default": "0.1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "select_last_index": {
+      "title": "Select Last Index",
+      "type": "boolean"
+    },
+    "source_node_id": {
+      "minLength": 1,
+      "title": "Source Node Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "source_node_id",
+    "input_name",
+    "output_name",
+    "axis",
+    "keepdims",
+    "select_last_index"
+  ],
+  "title": "ArgMaxPostprocess",
+  "type": "object"
+}

@@ -1,5 +1,7 @@
 """Memory resource feasibility checks."""
 
+from itertools import pairwise
+
 from arona.contracts.v1 import (
     CompilerMemoryPool,
     Diagnostic,
@@ -146,9 +148,7 @@ def annotate_storage_allocations(
                 )
             )
 
-        feasible = (
-            FeasibilityStatus.INFEASIBLE if diagnostics else FeasibilityStatus.FEASIBLE
-        )
+        feasible = FeasibilityStatus.INFEASIBLE if diagnostics else FeasibilityStatus.FEASIBLE
         annotated.append(
             allocation.model_copy(update={"feasible": feasible, "diagnostics": diagnostics})
         )
@@ -160,7 +160,7 @@ def has_address_overlap(resources: list[MemoryResource]) -> bool:
     """Return true when any declared board regions overlap."""
 
     ordered = sorted(resources, key=lambda resource: resource.start_address)
-    for previous, current in zip(ordered, ordered[1:], strict=False):
+    for previous, current in pairwise(ordered):
         previous_end = previous.start_address + previous.size_bytes
         if current.start_address < previous_end:
             return True

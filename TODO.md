@@ -31,10 +31,10 @@ ONNX QDQ 모델
 - [ ] baseline과 optimized 모델 모두 실제 `stedgeai`로 컴파일하고 원문 log를 보존한다.
 - [ ] 최소 한 모델에서 CPU software epoch, fallback operator 또는 NPU/CPU transition이 감소한다.
 - [ ] 최적화가 개선되지 않으면 baseline을 유지하고 그 이유를 보고한다.
-- [ ] 고정 입력 최소 10개로 원본과 최적화 모델의 end-to-end 결과 동등성을 검증한다.
+- [x] 고정 입력 최소 10개로 원본과 최적화 모델의 end-to-end 결과 동등성을 검증한다.
 - [ ] 최적화 모델을 NUCLEO-N657X0-Q에 programming하고 연속 inference 최소 5회를 확인한다.
 - [ ] 모델 checksum, toolchain/firmware/board revision, 명령, exit code, latency와 memory를 기록한다.
-- [ ] `pytest`, Ruff format/lint, mypy가 모두 통과한다.
+- [x] `pytest`, Ruff format/lint, mypy가 모두 통과한다.
 
 ## 2. 목표 보드와 탑재 모델 확정
 
@@ -94,11 +94,11 @@ ONNX QDQ 모델
 
 ### 반드시 구현한다
 
-- [ ] 실제 `stedgeai` toolchain 탐지와 버전 고정
-- [ ] live compile 결과 수집 및 실제 log/report parser
-- [ ] terminal ArgMax externalization 규칙 1개
-- [ ] 원본/최적화 ONNX Runtime end-to-end 검증
-- [ ] compiler-in-the-loop 전후 비교와 개선된 경우에만 채택
+- [x] 실제 `stedgeai` toolchain 탐지와 현재 버전 증거 고정
+- [ ] Core 4.0.0 live compile 성공 결과 수집 및 실제 metric report parser
+- [x] terminal ArgMax externalization 규칙 1개
+- [x] 원본/최적화 ONNX Runtime end-to-end 검증
+- [x] compiler-in-the-loop 전후 비교와 개선된 경우에만 채택
 - [ ] ST 공식 N6 deployment workflow를 호출하는 최소 deploy/program wrapper
 - [ ] 보드 실행 증거와 Markdown/JSON 통합 보고서
 
@@ -131,9 +131,9 @@ ONNX QDQ 모델
 
 - [ ] ST 공식 `stm32ai-modelzoo-services` image classification N6 workflow로 P0 128 모델을 배포한다.
 - [ ] programming 성공과 inference 최소 5회를 확인한다.
-- [ ] 같은 모델을 실제 `stedgeai analyze`로 실행하고 원문 log/report를 보존한다.
+- [x] 같은 모델을 실제 `stedgeai analyze`로 실행하고 원문 log/report를 보존한다.
 - [ ] 실제 report에서 node/epoch/fallback/memory/stage를 추출할 수 있는 최소 parser를 구현한다.
-- [ ] 기존 합성 fixture와 실제 toolchain fixture를 명확히 분리한다.
+- [x] 기존 합성 fixture와 실제 toolchain fixture를 명확히 분리한다.
 
 ### Day 1 종료 gate
 
@@ -154,44 +154,45 @@ ONNX QDQ 모델
 
 ### graph rewrite
 
-- [ ] `src/arona/graph/`에 최소 `RewriteRule` 인터페이스와 terminal ArgMax 규칙을 추가한다.
-- [ ] ArgMax가 graph output의 유일한 producer이고 결과가 다른 node에서 사용되지 않을 때만 후보로 잡는다.
-- [ ] optimized graph output을 ArgMax 입력 confidence/logit tensor로 교체한다.
-- [ ] MCU에서 수행할 axis/keepdims/output dtype 정보를 `postprocess.json`으로 저장한다.
-- [ ] 원본 model은 수정하지 않고 `optimized-model.onnx`를 새로 저장한다.
-- [ ] 적용·거절 이유와 affected node ID를 `RewriteRecord`에 기록한다.
+- [x] `src/arona/graph/`에 최소 `RewriteRule` 인터페이스와 terminal ArgMax 규칙을 추가한다.
+- [x] ArgMax가 graph output의 유일한 producer이고 결과가 다른 node에서 사용되지 않을 때만 후보로 잡는다.
+- [x] optimized graph output을 ArgMax 입력 confidence/logit tensor로 교체한다.
+- [x] MCU에서 수행할 axis/keepdims/output dtype 정보를 `postprocess.json`으로 저장한다.
+- [x] 원본 model은 수정하지 않고 `optimized-model.onnx`를 새로 저장한다.
+- [x] 적용·거절 이유와 affected node ID를 `RewriteRecord`에 기록한다.
 
 ### validation
 
-- [ ] 고정 seed random input과 라이선스상 저장 가능한 실제 이미지로 최소 10개 입력을 만든다.
-- [ ] baseline ONNX output과 `ArgMax(optimized ONNX output)`을 비교한다.
-- [ ] class index가 모두 같아야 통과하며 mismatch 시 후보를 자동 거절한다.
-- [ ] validation exception과 NaN/Inf를 실패로 처리한다.
+- [x] 고정 seed random input을 최소 10개 생성한다.
+- [ ] 라이선스상 저장 가능한 실제 이미지 validation input을 확보한다.
+- [x] baseline ONNX output과 `ArgMax(optimized ONNX output)`을 비교한다.
+- [x] class index가 모두 같아야 통과하며 mismatch 시 후보를 자동 거절한다.
+- [x] validation exception과 NaN/Inf를 실패로 처리한다.
 
 ### compiler-in-the-loop
 
-- [ ] pipeline이 baseline live compile → candidate compile 순서로 adapter를 호출하게 한다.
-- [ ] software epoch, fallback operator, transition, activation, deployability를 비교한다.
-- [ ] 동등성 통과와 compiler 개선을 모두 만족할 때만 `decision.selected=optimized`로 설정한다.
-- [ ] 개선이 없거나 compile이 실패하면 baseline을 유지한다.
+- [x] pipeline이 baseline live compile → candidate compile 순서로 adapter를 호출하게 한다.
+- [x] software epoch, fallback operator, transition, activation, deployability를 비교한다.
+- [x] 동등성 통과와 compiler 개선을 모두 만족할 때만 `decision.selected=optimized`로 설정한다.
+- [x] 개선이 없거나 compile이 실패하면 baseline을 유지한다.
 - [ ] `--expand-softmax`, `--SWISH-recognition`은 graph에서 근거가 있을 때만 후보 option으로 시험한다.
 
 ### 테스트
 
-- [ ] terminal ArgMax 적용/거절/다중 consumer/axis/keepdims 테스트
-- [ ] validation pass/fail 테스트
-- [ ] candidate compile 실패 시 baseline 원복 테스트
-- [ ] 실제 log fixture parser regression 테스트
+- [x] terminal ArgMax 적용/거절/다중 consumer/axis/keepdims 테스트
+- [x] validation pass/fail 테스트
+- [x] candidate compile 실패 시 baseline 원복 테스트
+- [x] 실제 log fixture parser regression 테스트
 
 ### Day 2 종료 gate
 
 - [ ] MobileNetV2 128 파생 모델에서 baseline과 optimized compiler report의 차이를 자동 생성한다.
-- [ ] optimized model과 postprocess를 합친 end-to-end 결과가 10/10 일치한다.
-- [ ] 개선이 없으면 수치를 꾸미지 않고 rule/모델 조합을 폐기한다.
+- [x] optimized model과 postprocess를 합친 end-to-end 결과가 10/10 일치한다.
+- [x] 개선이 없으면 수치를 꾸미지 않고 rule/모델 조합을 폐기한다.
 
 ### Commit checkpoint 2
 
-- [ ] rewrite, 동등성 검증, compiler-in-the-loop 테스트가 모두 통과하면 커밋한다.
+- [x] rewrite, 동등성 검증, compiler-in-the-loop 테스트가 모두 통과하면 커밋한다.
 - 권장 메시지: `feat: add compiler-validated terminal argmax rewrite`
 
 ## 6. Day 3 — 배포 통합과 보드 검증
@@ -261,9 +262,9 @@ ONNX QDQ 모델
 
 ### 품질과 재현
 
-- [ ] 현재 남은 Ruff format 8개 파일을 정리한다.
-- [ ] Ruff lint 2건과 mypy 2건을 해결한다.
-- [ ] 모든 unit/contract/integration test를 통과시킨다.
+- [x] 현재 남은 Ruff format 8개 파일을 정리한다.
+- [x] Ruff lint 2건과 mypy 2건을 해결한다.
+- [x] 모든 unit/contract/integration test를 통과시킨다.
 - [ ] hardware test는 marker로 분리하고, 보드가 없을 때 명시적으로 skip한다.
 - [ ] 깨끗한 checkout에서 설치→모델 확보→optimize→deploy를 재현한다.
 - [ ] 3분 이내 데모 명령과 예상 화면을 `docs/demo.md`에 작성한다.

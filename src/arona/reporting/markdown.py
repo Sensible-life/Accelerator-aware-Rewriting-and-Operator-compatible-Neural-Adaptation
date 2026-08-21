@@ -1,6 +1,6 @@
 """Markdown report rendering."""
 
-from arona.contracts.v1 import RunReport
+from arona.contracts.v1 import CompilationAnalysis, RunReport
 
 
 def render_markdown_report(report: RunReport) -> str:
@@ -23,51 +23,81 @@ def render_markdown_report(report: RunReport) -> str:
         ),
     ]
     if report.baseline is not None:
-        baseline = report.baseline
+        lines.extend(_render_analysis("Baseline", report.baseline))
+    if report.optimized is not None:
+        lines.extend(_render_analysis("Optimized Candidate", report.optimized))
+
+    if report.rewrites:
         lines.extend(
             [
                 "",
-                "## Baseline Placement",
+                "## Rewrite and Validation",
                 "",
-                "| Metric | Value |",
-                "| --- | --- |",
-                f"| Total epochs | {baseline.epochs.total_epochs} |",
-                f"| NPU epochs | {baseline.epochs.accelerator_epochs} |",
-                f"| Software epochs | {baseline.epochs.software_epochs} |",
-                f"| Partitions | {baseline.graph.partition_count} |",
-                f"| NPU/CPU transitions | {baseline.graph.accelerator_cpu_transitions} |",
-                "",
-                "## Fallback Operators",
-                "",
-                "| Operator | Count | Reason |",
-                "| --- | ---: | --- |",
+                "| Rule | Status | Nodes | Validation | Reason |",
+                "| --- | --- | --- | --- | --- |",
             ]
         )
-        for operator in baseline.fallback_operators:
-            lines.append(f"| `{operator.op_type}` | {operator.count} | {operator.reason or ''} |")
-
-        if baseline.resources is not None:
-            lines.extend(
-                [
-                    "",
-                    "## Memory Feasibility",
-                    "",
-                    f"Deployable: `{baseline.resources.deployable}`",
-                    "",
-                    "| Compiler Pool | Address | Size | Board Region | Feasible |",
-                    "| --- | ---: | ---: | --- | --- |",
-                ]
+        for rewrite in report.rewrites:
+            validation = rewrite.validation.status if rewrite.validation else "not run"
+            nodes = ", ".join(rewrite.affected_node_ids)
+            lines.append(
+                f"| `{rewrite.rule_id}` | `{rewrite.status}` | `{nodes}` | "
+                f"`{validation}` | {rewrite.reason} |"
             )
-            for pool in baseline.resources.compiler_pools:
-                lines.append(
-                    f"| `{pool.name}` | `0x{pool.start_address:08x}` | {pool.size_bytes} | "
-                    f"{pool.mapped_region_name or ''} | `{pool.feasible}` |"
-                )
-            lines.extend(["", "### Storage Classes", "", "| Class | Region | Size | Feasible |"])
-            lines.append("| --- | --- | ---: | --- |")
-            for allocation in baseline.resources.storage_allocations:
-                lines.append(
-                    f"| `{allocation.storage_class}` | `{allocation.region_name}` | "
-                    f"{allocation.size_bytes} | `{allocation.feasible}` |"
-                )
+
+    if report.decision is not None:
+        lines.extend(
+            [
+                "",
+                "## Final Decision",
+                "",
+                f"- Selected: `{report.decision.selected}`",
+                f"- Accepted for deployment: `{report.decision.accepted}`",
+            ]
+        )
+        lines.extend(f"- Reason: {reason}" for reason in report.decision.reasons)
     return "\n".join(lines) + "\n"
+
+
+def _render_analysis(label: str, analysis: CompilationAnalysis) -> list[str]:
+    lines = [
+        "",
+        f"## {label} Compiler Analysis",
+        "",
+        f"Status: `{analysis.status}`",
+        "",
+        "| Metric | Value |",
+        "| --- | ---: |",
+        f"| Total epochs | {analysis.epochs.total_epochs} |",
+        f"| NPU epochs | {analysis.epochs.accelerator_epochs} |",
+        f"| Software epochs | {analysis.epochs.software_epochs} |",
+        f"| Fallback operators | {sum(item.count for item in analysis.fallback_operators)} |",
+        f"| Partitions | {analysis.graph.partition_count} |",
+        f"| NPU/CPU transitions | {analysis.graph.accelerator_cpu_transitions} |",
+        "",
+        "### Fallback Operators",
+        "",
+        "| Operator | Count | Reason |",
+        "| --- | ---: | --- |",
+    ]
+    for operator in analysis.fallback_operators:
+        lines.append(f"| `{operator.op_type}` | {operator.count} | {operator.reason or ''} |")
+
+    if analysis.resources is not None:
+        lines.extend(
+            [
+                "",
+                "### Memory Feasibility",
+                "",
+                f"Deployable: `{analysis.resources.deployable}`",
+                "",
+                "| Compiler Pool | Address | Size | Board Region | Feasible |",
+                "| --- | ---: | ---: | --- | --- |",
+            ]
+        )
+        for pool in analysis.resources.compiler_pools:
+            lines.append(
+                f"| `{pool.name}` | `0x{pool.start_address:08x}` | {pool.size_bytes} | "
+                f"{pool.mapped_region_name or ''} | `{pool.feasible}` |"
+            )
+    return lines

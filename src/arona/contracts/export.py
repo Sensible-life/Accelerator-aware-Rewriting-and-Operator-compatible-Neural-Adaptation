@@ -5,12 +5,19 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
-from arona.contracts.v1 import DeviceDiscovery, DeviceProbe, OptimizeRequest, RunReport
+from arona.contracts.v1 import (
+    ArgMaxPostprocess,
+    DeviceDiscovery,
+    DeviceProbe,
+    OptimizeRequest,
+    RunReport,
+)
 
 SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "device-discovery.schema.json": DeviceDiscovery,
     "device-probe.schema.json": DeviceProbe,
     "optimize-request.schema.json": OptimizeRequest,
+    "postprocess.schema.json": ArgMaxPostprocess,
     "run-report.schema.json": RunReport,
 }
 SCHEMA_BASE_URI = "https://arona.dev/schemas/v0.1.0"

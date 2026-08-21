@@ -1,0 +1,10 @@
+{
+  "captured_at": "2026-08-21T17:42:13+09:00",
+  "case": "official MobileNetV2 QDQ terminal-ArgMax derivative",
+  "host_os": "Windows",
+  "stedgeai": "2.2.0-20266 2adc00962",
+  "xcube_ai": "10.2.0-RC1",
+  "target": "stm32n6",
+  "expected_model_core": "4.0.0",
+  "sanitization": "absolute executable and model paths replaced with stable placeholders"
+}

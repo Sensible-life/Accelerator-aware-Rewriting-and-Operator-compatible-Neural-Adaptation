@@ -30,6 +30,8 @@ from arona.contracts.v1 import (
 
 @dataclass(frozen=True)
 class ParsedStEdgeAiLog:
+    exit_code: int | None = None
+    duration_ms: float | None = None
     epochs: EpochSummary = field(default_factory=EpochSummary)
     fallback_operators: tuple[FallbackOperator, ...] = ()
     qdq_boundaries: tuple[QDQBoundary, ...] = ()
@@ -64,6 +66,8 @@ def parse_stedgeai_text(text: str) -> ParsedStEdgeAiLog:
     diagnostics = tuple(_parse_diagnostics(text))
 
     return ParsedStEdgeAiLog(
+        exit_code=_first_signed_int(text, r"exit code\s*[:=]\s*(-?[0-9]+)"),
+        duration_ms=_first_float(text, r"duration ms\s*[:=]\s*([0-9]+(?:\.[0-9]+)?)"),
         epochs=EpochSummary(
             total_epochs=total_epochs,
             accelerator_epochs=npu_epochs,
@@ -165,9 +169,7 @@ def _parse_storage_allocations(text: str) -> list[StorageAllocation]:
             StorageAllocation(
                 storage_class=_storage_class(match.group("class")),
                 region_name=match.group("region"),
-                start_address=(
-                    _clean_int(match.group("start")) if match.group("start") else None
-                ),
+                start_address=(_clean_int(match.group("start")) if match.group("start") else None),
                 size_bytes=_clean_int(match.group("size")),
                 alignment=(
                     _clean_int(match.group("alignment")) if match.group("alignment") else None
@@ -217,12 +219,18 @@ def _parse_diagnostics(text: str) -> list[Diagnostic]:
                     message=stripped.removeprefix("WARNING:").removeprefix("Warning:").strip(),
                 )
             )
-        elif lowered.startswith("error:"):
+        elif lowered.startswith("error:") or lowered.startswith("internal error:"):
             diagnostics.append(
                 Diagnostic(
                     severity=Severity.ERROR,
                     source="stedgeai",
-                    message=stripped.removeprefix("ERROR:").removeprefix("Error:").strip(),
+                    message=(
+                        stripped.removeprefix("INTERNAL ERROR:")
+                        .removeprefix("Internal error:")
+                        .removeprefix("ERROR:")
+                        .removeprefix("Error:")
+                        .strip()
+                    ),
                 )
             )
     return diagnostics
@@ -233,6 +241,16 @@ def _first_int(text: str, pattern: str) -> int | None:
     if not match:
         return None
     return _clean_int(match.group(1))
+
+
+def _first_signed_int(text: str, pattern: str) -> int | None:
+    match = re.search(pattern, text, re.IGNORECASE)
+    return int(match.group(1)) if match else None
+
+
+def _first_float(text: str, pattern: str) -> float | None:
+    match = re.search(pattern, text, re.IGNORECASE)
+    return float(match.group(1)) if match else None
 
 
 def _clean_int(value: str) -> int:

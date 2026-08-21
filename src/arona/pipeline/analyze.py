@@ -39,8 +39,7 @@ def analyze_model(
     baseline = adapter.parse(compiler_log=compiler_log, model=model, target=probe.target)
 
     accepted = (
-        baseline.resources is None
-        or baseline.resources.deployable != FeasibilityStatus.INFEASIBLE
+        baseline.resources is None or baseline.resources.deployable != FeasibilityStatus.INFEASIBLE
     )
     decision_reasons = ["Baseline analysis completed."]
     if (

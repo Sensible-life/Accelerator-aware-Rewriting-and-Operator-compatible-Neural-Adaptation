@@ -36,17 +36,32 @@ def render_run_report(report: RunReport) -> str:
         f"  accelerator: {report.target.device.accelerator if report.target.device else 'unknown'}",
     ]
     if report.baseline is not None:
-        lines.extend(["", *_render_analysis(report.baseline)])
+        lines.extend(["", *_render_analysis("Baseline", report.baseline)])
+    if report.optimized is not None:
+        lines.extend(["", *_render_analysis("Optimized candidate", report.optimized)])
+    if report.rewrites:
+        lines.extend(["", "Rewrites"])
+        for rewrite in report.rewrites:
+            validation = rewrite.validation.status if rewrite.validation else "not run"
+            lines.append(f"  [{rewrite.status}] {rewrite.rule_id}; validation={validation}")
+            lines.append(f"  reason: {rewrite.reason}")
     if report.decision is not None:
-        lines.extend(["", "Decision", f"  selected: {report.decision.selected}"])
+        lines.extend(
+            [
+                "",
+                "Decision",
+                f"  selected: {report.decision.selected}",
+                f"  accepted: {report.decision.accepted}",
+            ]
+        )
         for reason in report.decision.reasons:
             lines.append(f"  reason: {reason}")
     return "\n".join(lines)
 
 
-def _render_analysis(analysis: CompilationAnalysis) -> list[str]:
+def _render_analysis(label: str, analysis: CompilationAnalysis) -> list[str]:
     lines = [
-        "Pipeline",
+        f"{label} pipeline",
         *[
             f"  [{stage.status}] {stage.stage}"
             + (f" - {stage.first_error}" if stage.first_error else "")

@@ -1,0 +1,11 @@
+Command: stedgeai analyze --target stm32n6 --model <mobilenet-terminal-argmax.onnx> --type onnx --st-neural-art
+Exit code: 4294967295
+Duration ms: 11687.000
+STDOUT:
+ST Edge AI Core v2.2.0-20266 2adc00962
+
+PASS:   0%|          | 0/98 [00:00<?, ?it/s]
+
+INTERNAL ERROR: Your model ir_version 10 is higher than the checker's (9).
+
+STDERR:

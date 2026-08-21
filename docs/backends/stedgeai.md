@@ -48,17 +48,18 @@ tests/fixtures/backends/stedgeai/<case-id>/
 라이선스상 배포 가능한 log, JSON report, 명령, checksum만 fixture로 보관한다. 실제 run
 산출물은 `outputs/<run-id>/compiler/`에 저장한다.
 
-현재 Sprint 1/2 fixture는 다음 두 사례를 보존한다.
+현재 fixture는 다음 세 사례를 보존한다.
 
 | case-id | 목적 | 핵심 판정 |
 | --- | --- | --- |
 | `conmamba_fallback` | 1,530 / 2,072 software epoch와 잘못된 HyperRAM activation pool 진단 | compiler scheduling 단계에서 실제 board memory profile과 맞지 않아 deployability 실패 |
 | `conmamba_xip_101` | code/constant를 XIP flash로 옮긴 101-sequence 사례 | activation pool이 실제 SRAM region 안에 있어 deployability feasible |
+| `core_2_2_ir_version_failure` | 2026-08-21 실제 MobileNetV2 파생 모델 live compile | Core 2.2.0 ONNX checker가 IR 10을 거절했으며 exit code와 최초 오류를 보존 |
 
 이 fixture는 원본 ConMamba model/binary를 저장하지 않는다. 재배포 가능한 compiler log,
 실행 command, 환경 metadata만 저장하고, 라이선스상 저장할 수 없는 산출물은 checksum과
 생성 절차로 대체한다.
 
-`src/arona/backends/stedgeai/parsers.py`는 현재 ARONA fixture 형식과 일반적인 사람이 읽는
-log 문구를 정규화한다. 실제 연구실 PC에서 확보한 원문 `stedgeai` log 형식은 같은 contract를
-유지한 채 parser rule만 추가한다.
+`src/arona/backends/stedgeai/parsers.py`는 ARONA fixture 형식과 실제 명령 wrapper의 exit code,
+duration, `INTERNAL ERROR`를 같은 contract로 정규화한다. 성공한 Core 4.0.0 report를 확보하면
+node/epoch/memory 세부 parser를 실제 출력 형식에 맞춰 확장한다.

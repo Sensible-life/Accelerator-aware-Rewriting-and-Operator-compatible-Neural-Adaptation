@@ -90,7 +90,7 @@ def _tensor_spec(value: onnx.ValueInfoProto) -> TensorSpec:
 
 def _data_type_name(elem_type: int) -> str:
     try:
-        return TensorProto.DataType.Name(elem_type).lower()
+        return str(TensorProto.DataType.Name(elem_type)).lower()
     except ValueError:
         return f"unknown({elem_type})"
 

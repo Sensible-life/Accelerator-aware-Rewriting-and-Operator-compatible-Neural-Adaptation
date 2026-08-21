@@ -7,7 +7,9 @@ import typer
 
 from arona import __version__
 from arona.contracts.export import export_json_schemas
+from arona.contracts.v1 import RunReport
 from arona.pipeline.analyze import analyze_model, discover_stedgeai
+from arona.pipeline.optimize import optimize_model
 from arona.reporting.markdown import render_markdown_report
 from arona.reporting.terminal import render_discovery, render_run_report
 
@@ -63,15 +65,7 @@ def analyze(
 
     report = analyze_model(model, compiler_log=compiler_log, output_directory=output_directory)
     run_directory = output_directory / report.run_id
-    run_directory.mkdir(parents=True, exist_ok=True)
-    (run_directory / "original-analysis.json").write_text(
-        report.model_dump_json(indent=2),
-        encoding="utf-8",
-    )
-    (run_directory / "report.md").write_text(
-        render_markdown_report(report),
-        encoding="utf-8",
-    )
+    _write_run_artifacts(report, run_directory)
     typer.echo(render_run_report(report))
     typer.echo(f"\nArtifacts written to {run_directory.as_posix()}")
 
@@ -86,38 +80,46 @@ def optimize(
         Path | None,
         typer.Option(
             "--compiler-log",
-            help="Captured stedgeai compiler log. Required until live compile is enabled.",
+            help="Optional captured baseline stedgeai log; otherwise compile live.",
         ),
     ] = None,
+    candidate_compiler_log: Annotated[
+        Path | None,
+        typer.Option(
+            "--candidate-compiler-log",
+            help="Optional captured candidate stedgeai log; otherwise compile live.",
+        ),
+    ] = None,
+    validation_samples: Annotated[
+        int,
+        typer.Option(
+            "--validation-samples",
+            min=1,
+            help="Number of deterministic random inputs used for equivalence validation.",
+        ),
+    ] = 10,
+    validation_seed: Annotated[
+        int,
+        typer.Option("--validation-seed", help="Random seed used for validation inputs."),
+    ] = 260821,
     output_directory: Annotated[
         Path,
         typer.Option("--output-directory", "-o"),
     ] = Path("outputs"),
 ) -> None:
-    """Run the MVP optimization pipeline.
+    """Run the MVP compiler-validated terminal ArgMax optimization pipeline."""
 
-    Sprint 1/2 currently performs baseline analysis and deployability diagnosis. Exact
-    rewrites are added in the next pipeline stage, so this command intentionally reports
-    a baseline decision when no safe rewrite candidate exists yet.
-    """
-
-    if compiler_log is None:
-        raise typer.BadParameter(
-            "--compiler-log is required until live stedgeai compile is enabled"
-        )
-    report = analyze_model(model, compiler_log=compiler_log, output_directory=output_directory)
+    report = optimize_model(
+        model,
+        output_directory=output_directory,
+        baseline_compiler_log=compiler_log,
+        candidate_compiler_log=candidate_compiler_log,
+        validation_samples=validation_samples,
+        validation_seed=validation_seed,
+    )
     run_directory = output_directory / report.run_id
-    run_directory.mkdir(parents=True, exist_ok=True)
-    (run_directory / "original-analysis.json").write_text(
-        report.model_dump_json(indent=2),
-        encoding="utf-8",
-    )
-    (run_directory / "report.md").write_text(
-        render_markdown_report(report),
-        encoding="utf-8",
-    )
+    _write_run_artifacts(report, run_directory)
     typer.echo(render_run_report(report))
-    typer.echo("\nNo exact rewrite candidate was applied in the Sprint 1/2 baseline pipeline.")
     typer.echo(f"Artifacts written to {run_directory.as_posix()}")
 
 
@@ -136,3 +138,32 @@ def export_schema(
     written_files = export_json_schemas(output_directory)
     for path in written_files:
         typer.echo(path.as_posix())
+
+
+def _write_run_artifacts(report: RunReport, run_directory: Path) -> None:
+    run_directory.mkdir(parents=True, exist_ok=True)
+    (run_directory / "run-report.json").write_text(
+        report.model_dump_json(indent=2) + "\n",
+        encoding="utf-8",
+    )
+    if report.baseline is not None:
+        (run_directory / "original-analysis.json").write_text(
+            report.baseline.model_dump_json(indent=2) + "\n",
+            encoding="utf-8",
+        )
+    if report.optimized is not None:
+        (run_directory / "optimized-analysis.json").write_text(
+            report.optimized.model_dump_json(indent=2) + "\n",
+            encoding="utf-8",
+        )
+    if report.rewrites:
+        rewrite_json = (
+            "[\n"
+            + ",\n".join(rewrite.model_dump_json(indent=2) for rewrite in report.rewrites)
+            + "\n]\n"
+        )
+        (run_directory / "rewrite-history.json").write_text(rewrite_json, encoding="utf-8")
+    (run_directory / "report.md").write_text(
+        render_markdown_report(report),
+        encoding="utf-8",
+    )

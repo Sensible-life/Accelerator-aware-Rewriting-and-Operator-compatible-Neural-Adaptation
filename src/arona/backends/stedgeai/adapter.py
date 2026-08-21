@@ -136,6 +136,8 @@ class StEdgeAiAdapter:
             "stm32n6",
             "--model",
             str(model),
+            "--type",
+            "onnx",
             "--st-neural-art",
         ]
         started = time.monotonic()
@@ -179,7 +181,9 @@ class StEdgeAiAdapter:
         )
         status = (
             CompilationStatus.FAILED
-            if any(stage.status == StageStatus.FAILED for stage in parsed.deployment_stages)
+            if parsed.exit_code not in {None, 0}
+            or any(stage.status == StageStatus.FAILED for stage in parsed.deployment_stages)
+            or any(diagnostic.severity == Severity.ERROR for diagnostic in parsed.diagnostics)
             else CompilationStatus.SUCCEEDED
         )
 
@@ -191,9 +195,24 @@ class StEdgeAiAdapter:
             model_sha256=model.info.sha256,
             compiler=compiler,
             invocation=CompilerInvocation(
-                command=["stedgeai", "analyze", "--target", "stm32n6", "--model", model.info.path],
+                command=[
+                    "stedgeai",
+                    "analyze",
+                    "--target",
+                    "stm32n6",
+                    "--model",
+                    model.info.path,
+                    "--type",
+                    "onnx",
+                    "--st-neural-art",
+                ],
                 working_directory=str(compiler_log.parent),
-                exit_code=0 if status != CompilationStatus.FAILED else 1,
+                exit_code=(
+                    parsed.exit_code
+                    if parsed.exit_code is not None
+                    else (0 if status != CompilationStatus.FAILED else 1)
+                ),
+                duration_ms=parsed.duration_ms,
             ),
             deployment_stages=list(parsed.deployment_stages),
             graph=_graph_summary(model, parsed),

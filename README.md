@@ -220,19 +220,23 @@ backend, pipeline과 CLI/reporting이 공유하는 Pydantic 계약은 `src/arona
 uv run arona schema export
 ```
 
-현재 Sprint 1/2 골격은 fixture 기반 baseline 분석을 먼저 지원합니다. 실제 `stedgeai`
-toolchain이 고정되기 전에는 캡처된 compiler log를 명시해 ONNX 모델과 board memory
-feasibility를 연결합니다.
+현재 MVP 파이프라인은 terminal ArgMax를 안전 조건 아래 외부화하고, ONNX Runtime 동등성과
+baseline/candidate compiler 결과를 모두 통과한 후보만 채택합니다. 캡처 log를 생략하면
+로컬 `stedgeai`를 직접 호출하며, 재현 테스트에서는 원본·후보 log를 각각 지정할 수 있습니다.
 
 ```bash
 uv run arona discover
 uv run arona analyze model.onnx --compiler-log tests/fixtures/backends/stedgeai/conmamba_fallback/compiler.log
-uv run arona optimize model.onnx --compiler-log tests/fixtures/backends/stedgeai/conmamba_fallback/compiler.log
+uv run arona optimize model-with-terminal-argmax.onnx
+uv run arona optimize model-with-terminal-argmax.onnx \
+  --compiler-log tests/fixtures/backends/stedgeai/conmamba_fallback/compiler.log \
+  --candidate-compiler-log tests/fixtures/backends/stedgeai/conmamba_xip_101/compiler.log
 ```
 
-`optimize`는 아직 exact rewrite를 적용하지 않고 baseline compile evidence, deployment
-stage, fallback epoch, memory pool 및 deployability를 구조화합니다. rewrite 채택/원복
-정책은 Sprint 3에서 같은 `RunReport` 계약 위에 추가합니다.
+결과 디렉터리에는 원본·후보 분석, `optimized-model.onnx`, `postprocess.json`, 10개 입력
+동등성 결과, rewrite 이력, 최종 선택을 담은 JSON과 Markdown 보고서가 생성됩니다. 현재 선정
+모델의 실제 compile은 로컬 Core 2.2.0과 요구 버전 4.0.0의 차이 때문에 실패하며, 이 경우
+파이프라인은 후보를 자동 롤백하고 `decision.selected=baseline`으로 기록합니다.
 
 환경 구성, 품질 검사 및 의존성 갱신 방법은 [개발 문서](docs/development.md), 계약의 의미와
 호환성 정책은 [실행 결과 JSON 계약](docs/contracts/backend-cli.md), 직접 의존성의 역할과

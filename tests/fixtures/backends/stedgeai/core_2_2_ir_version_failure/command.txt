@@ -1,0 +1,1 @@
+stedgeai analyze --target stm32n6 --model <mobilenet-terminal-argmax.onnx> --type onnx --st-neural-art

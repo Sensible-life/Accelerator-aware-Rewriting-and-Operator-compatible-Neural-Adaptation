@@ -243,6 +243,20 @@ class ValidationConfig(ContractModel):
     relative_tolerance: NonNegativeFloat = 1e-4
 
 
+class ArgMaxPostprocess(ContractModel):
+    """Post-processing needed after externalizing a terminal ONNX ArgMax node."""
+
+    schema_version: ContractVersion = CONTRACT_VERSION
+    operation: Literal["ArgMax"] = "ArgMax"
+    source_node_id: NonEmptyString
+    input_name: NonEmptyString
+    output_name: NonEmptyString
+    axis: int
+    keepdims: bool
+    select_last_index: bool
+    output_data_type: Literal["int64"] = "int64"
+
+
 class OptimizationConfig(ContractModel):
     enable_exact_rewrites: bool = True
     enable_neural_adaptation: bool = False
