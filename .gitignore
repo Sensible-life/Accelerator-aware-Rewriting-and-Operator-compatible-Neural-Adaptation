@@ -15,6 +15,9 @@ dist/
 # ARONA run artifacts may contain large generated models and compiler output.
 outputs/
 
+# Third-party model binaries are downloaded locally; commit only their manifest/checksums.
+models/downloads/
+
 # Local study notes and scratch files.
 ARONA_PROJECT_GUIDE.md
 study/
