@@ -7,7 +7,17 @@ import typer
 
 from arona import __version__
 from arona.contracts.export import export_json_schemas
-from arona.contracts.v1 import RunReport
+from arona.contracts.v1 import DeploymentApplication, RunReport
+from arona.deployment import (
+    FirmwareImage,
+    NucleoDeploymentConfig,
+    Stm32N6Deployer,
+    TelemetryInstrumentationError,
+    configure_mvp_application,
+    instrument_fixed_input_smoke,
+    instrument_uart_telemetry,
+    sync_stedgeai_runtime,
+)
 from arona.pipeline.analyze import analyze_model, discover_stedgeai
 from arona.pipeline.optimize import optimize_model
 from arona.reporting.markdown import render_markdown_report
@@ -23,6 +33,8 @@ app = typer.Typer(
 # create schema subcommand(ex: arona schema export)
 schema_app = typer.Typer(help="Inspect and export backend/pipeline/CLI contracts.")
 app.add_typer(schema_app, name="schema")
+deployment_app = typer.Typer(help="Build, program, and validate STM32N6 deployments.")
+app.add_typer(deployment_app, name="deployment")
 
 
 @app.command()
@@ -167,3 +179,338 @@ def _write_run_artifacts(report: RunReport, run_directory: Path) -> None:
         render_markdown_report(report),
         encoding="utf-8",
     )
+
+
+@deployment_app.command("instrument")
+def deployment_instrument(
+    application: Annotated[
+        DeploymentApplication,
+        typer.Option("--application", help="Official STM32N6 application type."),
+    ],
+    application_directory: Annotated[
+        Path,
+        typer.Argument(help="Official Application/NUCLEO-N657X0-Q directory."),
+    ],
+) -> None:
+    """Add explicit, idempotent per-inference UART telemetry to an official application."""
+
+    try:
+        source_path, changed = instrument_uart_telemetry(application, application_directory)
+    except TelemetryInstrumentationError as error:
+        raise typer.BadParameter(str(error)) from error
+    action = "instrumented" if changed else "already instrumented"
+    typer.echo(f"{source_path.as_posix()}: {action}")
+
+
+@deployment_app.command("fixed-input")
+def deployment_fixed_input(
+    application: Annotated[
+        DeploymentApplication,
+        typer.Option("--application", help="Official STM32N6 application type."),
+    ],
+    application_directory: Annotated[
+        Path,
+        typer.Argument(help="Official Application/NUCLEO-N657X0-Q directory."),
+    ],
+) -> None:
+    """Use deterministic input for real inference when a camera is unavailable."""
+
+    try:
+        source_path, changed = instrument_fixed_input_smoke(application, application_directory)
+    except TelemetryInstrumentationError as error:
+        raise typer.BadParameter(str(error)) from error
+    action = "fixed-input smoke mode enabled" if changed else "already enabled"
+    typer.echo(f"{source_path.as_posix()}: {action}")
+
+
+@deployment_app.command("configure")
+def deployment_configure(
+    application: Annotated[
+        DeploymentApplication,
+        typer.Option("--application", help="Fixed MVP application type."),
+    ],
+    application_directory: Annotated[
+        Path,
+        typer.Argument(help="Official Application/NUCLEO-N657X0-Q directory."),
+    ],
+) -> None:
+    """Configure the official application for the selected fixed MVP model."""
+
+    try:
+        config_path = configure_mvp_application(application, application_directory)
+    except ValueError as error:
+        raise typer.BadParameter(str(error)) from error
+    typer.echo(config_path.as_posix())
+
+
+@deployment_app.command("build")
+def deployment_build(
+    application: Annotated[
+        DeploymentApplication,
+        typer.Option("--application", help="Official STM32N6 application type."),
+    ],
+    application_directory: Annotated[
+        Path,
+        typer.Argument(help="Official Application/NUCLEO-N657X0-Q directory."),
+    ],
+    output_directory: Annotated[
+        Path,
+        typer.Option("--output-directory", "-o", help="Deployment evidence directory."),
+    ] = Path("outputs/deployment"),
+    screen_interface: Annotated[
+        str,
+        typer.Option("--screen-interface", help="NUCLEO display interface: UVCL or SPI."),
+    ] = "UVCL",
+    jobs: Annotated[
+        int,
+        typer.Option("--jobs", min=1, max=32, help="Maximum parallel Make jobs."),
+    ] = 8,
+    build_top: Annotated[
+        str,
+        typer.Option(
+            "--build-top",
+            help="Relative Make build directory name; use a new name for a clean build.",
+        ),
+    ] = "build",
+    model_directory: Annotated[
+        Path | None,
+        typer.Option(
+            "--model-directory",
+            help="Generated network.c/stai_network.c model directory overriding MODEL_DIR.",
+        ),
+    ] = None,
+) -> None:
+    """Build and sign an official NUCLEO-N657X0-Q application."""
+
+    if screen_interface not in {"UVCL", "SPI"}:
+        raise typer.BadParameter("--screen-interface must be UVCL or SPI")
+    result = Stm32N6Deployer().build(
+        NucleoDeploymentConfig(application=application),
+        application_directory,
+        output_directory,
+        jobs=jobs,
+        build_top=build_top,
+        model_directory=model_directory,
+        screen_interface=screen_interface,
+    )
+    typer.echo(_render_deployment_result(result))
+    if result.status == "failed":
+        raise typer.Exit(1)
+
+
+@deployment_app.command("sync-runtime")
+def deployment_sync_runtime(
+    application_directory: Annotated[
+        Path,
+        typer.Argument(help="Official Application/NUCLEO-N657X0-Q directory."),
+    ],
+    core_directory: Annotated[
+        Path,
+        typer.Option(
+            "--core-directory",
+            help="Installed STEdgeAI Core root containing Middlewares/ST/AI.",
+        ),
+    ],
+    output_directory: Annotated[
+        Path,
+        typer.Option("--output-directory", "-o", help="Runtime-sync evidence directory."),
+    ] = Path("outputs/deployment/runtime-sync"),
+) -> None:
+    """Synchronize and verify the official application runtime against STEdgeAI Core."""
+
+    try:
+        manifest_path = sync_stedgeai_runtime(
+            application_directory,
+            core_directory,
+            output_directory,
+        )
+    except ValueError as error:
+        raise typer.BadParameter(str(error)) from error
+    typer.echo(manifest_path.as_posix())
+
+
+@deployment_app.command("generate")
+def deployment_generate(
+    model: Annotated[Path, typer.Argument(help="Selected ONNX model to generate.")],
+    application: Annotated[
+        DeploymentApplication,
+        typer.Option("--application", help="Official STM32N6 application type."),
+    ],
+    model_support_directory: Annotated[
+        Path,
+        typer.Option(
+            "--model-support-directory",
+            help="Official repository Model directory containing the NUCLEO Neural-ART profile.",
+        ),
+    ],
+    output_directory: Annotated[
+        Path,
+        typer.Option("--output-directory", "-o", help="Generated model and evidence directory."),
+    ] = Path("outputs/deployment-generation"),
+) -> None:
+    """Generate selected-model sources and external-flash data with STEdgeAI Core."""
+
+    result = Stm32N6Deployer().generate(
+        NucleoDeploymentConfig(application=application, timeout_seconds=600),
+        model,
+        model_support_directory,
+        output_directory,
+    )
+    typer.echo(_render_deployment_result(result))
+    if result.status != "succeeded":
+        raise typer.Exit(1)
+
+
+@deployment_app.command("program")
+def deployment_program(
+    firmware: Annotated[
+        list[str],
+        typer.Argument(help="One or more PATH or PATH@0xADDRESS firmware specifications."),
+    ],
+    application: Annotated[
+        DeploymentApplication,
+        typer.Option("--application", help="Application represented by the firmware."),
+    ],
+    model: Annotated[
+        Path | None,
+        typer.Option("--model", help="Model associated with the generated firmware."),
+    ] = None,
+    output_directory: Annotated[
+        Path,
+        typer.Option("--output-directory", "-o", help="Deployment evidence directory."),
+    ] = Path("outputs/deployment"),
+    boot_mode: Annotated[
+        str,
+        typer.Option(
+            "--boot-mode",
+            help="Physical board mode asserted by the operator; programming requires development.",
+        ),
+    ] = "development",
+) -> None:
+    """Probe the exact NUCLEO board and program firmware with captured logs."""
+
+    images = [_parse_firmware_spec(value) for value in firmware]
+    result = Stm32N6Deployer().program(
+        NucleoDeploymentConfig(
+            application=application,
+            boot_mode=boot_mode,
+        ),
+        images,
+        output_directory,
+        model_path=model,
+    )
+    typer.echo(_render_deployment_result(result))
+    if result.status == "failed":
+        raise typer.Exit(1)
+
+
+@deployment_app.command("backup")
+def deployment_backup(
+    application: Annotated[
+        DeploymentApplication,
+        typer.Option("--application", help="Application to be deployed after the backup."),
+    ],
+    output_directory: Annotated[
+        Path,
+        typer.Option("--output-directory", "-o", help="Backup and evidence directory."),
+    ] = Path("outputs/deployment-backup"),
+) -> None:
+    """Back up the complete 64 MiB NUCLEO external flash after an exact-board probe."""
+
+    result = Stm32N6Deployer().backup_external_flash(
+        NucleoDeploymentConfig(application=application),
+        output_directory,
+    )
+    typer.echo(_render_deployment_result(result))
+    if result.status != "succeeded":
+        raise typer.Exit(1)
+
+
+@deployment_app.command("validate")
+def deployment_validate(
+    application: Annotated[
+        DeploymentApplication,
+        typer.Option("--application", help="Running application type."),
+    ],
+    output_directory: Annotated[
+        Path,
+        typer.Option("--output-directory", "-o", help="Deployment evidence directory."),
+    ] = Path("outputs/deployment-validation"),
+    serial_port: Annotated[
+        str,
+        typer.Option("--serial-port", help="ST-LINK virtual COM port."),
+    ] = "COM5",
+    inference_count: Annotated[
+        int,
+        typer.Option("--inference-count", min=1, help="Required explicit inference records."),
+    ] = 5,
+    capture_seconds: Annotated[
+        float,
+        typer.Option("--capture-seconds", min=0.1, help="UART capture duration."),
+    ] = 30.0,
+    expected_model_name: Annotated[
+        str | None,
+        typer.Option("--expected-model-name", help="Required model identity in UART telemetry."),
+    ] = None,
+    expected_input_fnv1a: Annotated[
+        str | None,
+        typer.Option(
+            "--expected-input-fnv1a",
+            help="Require every inference to report this deterministic fixed-input hash.",
+        ),
+    ] = None,
+) -> None:
+    """Validate explicit inference telemetry after flash boot and power-cycle."""
+
+    result = Stm32N6Deployer().validate_serial(
+        NucleoDeploymentConfig(
+            application=application,
+            serial_port=serial_port,
+            boot_mode="flash",
+        ),
+        output_directory,
+        minimum_inferences=inference_count,
+        capture_seconds=capture_seconds,
+        expected_model_name=expected_model_name,
+        expected_input_fnv1a=expected_input_fnv1a,
+    )
+    typer.echo(_render_deployment_result(result))
+    if result.status != "succeeded":
+        raise typer.Exit(1)
+
+
+def _parse_firmware_spec(value: str) -> FirmwareImage:
+    path_value, separator, parsed_address = value.rpartition("@")
+    address: str | None
+    if separator:
+        address = parsed_address
+    else:
+        path_value = value
+        address = None
+    path = Path(path_value)
+    return FirmwareImage(
+        path=path,
+        address=address,
+        description=f"Firmware image {path.name}",
+    )
+
+
+def _render_deployment_result(result: object) -> str:
+    from arona.contracts.v1 import DeploymentResult
+
+    if not isinstance(result, DeploymentResult):
+        raise TypeError("result must be a DeploymentResult")
+    lines = [
+        "STM32N6 deployment",
+        f"  application: {result.application}",
+        f"  board: {result.board}",
+        f"  status: {result.status}",
+    ]
+    for stage in result.stages:
+        lines.append(f"  [{stage.status}] {stage.stage}")
+        if stage.first_error:
+            lines.append(f"    error: {stage.first_error}")
+    lines.append(f"  inference observations: {len(result.observations)}")
+    if result.reason:
+        lines.append(f"  reason: {result.reason}")
+    return "\n".join(lines)

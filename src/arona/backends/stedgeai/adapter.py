@@ -260,7 +260,7 @@ def _tool(name: str, version: str | None) -> ToolInfo | None:
 
 
 def _resolve_stedgeai_executable() -> str | None:
-    """Find stedgeai from explicit configuration, PATH, or an X-CUBE-AI pack."""
+    """Find stedgeai from explicit configuration, PATH, standalone Core, or a pack."""
 
     configured = os.getenv("ARONA_STEDGEAI_PATH")
     if configured:
@@ -278,6 +278,12 @@ def _resolve_stedgeai_executable() -> str | None:
         if candidate.is_file():
             return str(candidate.resolve())
 
+    standalone_root = Path(os.getenv("ARONA_STEDGEAI_INSTALL_ROOT", "C:/ST/STEdgeAI"))
+    standalone_candidates = list(standalone_root.glob("*/Utilities/windows/stedgeai.exe"))
+    if standalone_candidates:
+        newest = max(standalone_candidates, key=_stedgeai_version_key)
+        return str(newest.resolve())
+
     user_directory = Path(os.getenv("USERPROFILE", str(Path.home())))
     pack_root = (
         user_directory / "STM32Cube" / "Repository" / "Packs" / "STMicroelectronics" / "X-CUBE-AI"
@@ -285,11 +291,11 @@ def _resolve_stedgeai_executable() -> str | None:
     candidates = list(pack_root.glob("*/Utilities/windows/stedgeai.exe"))
     if not candidates:
         return None
-    newest = max(candidates, key=_xcube_ai_version_key)
+    newest = max(candidates, key=_stedgeai_version_key)
     return str(newest.resolve())
 
 
-def _xcube_ai_version_key(executable: Path) -> tuple[int, ...]:
+def _stedgeai_version_key(executable: Path) -> tuple[int, ...]:
     version = executable.parents[2].name
     return tuple(int(part) if part.isdigit() else -1 for part in version.split("."))
 

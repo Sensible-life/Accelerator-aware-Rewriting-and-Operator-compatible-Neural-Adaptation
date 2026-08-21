@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 from arona.contracts.v1 import (
     ArgMaxPostprocess,
+    DeploymentResult,
     DeviceDiscovery,
     DeviceProbe,
     OptimizeRequest,
@@ -16,6 +17,7 @@ from arona.contracts.v1 import (
 SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "device-discovery.schema.json": DeviceDiscovery,
     "device-probe.schema.json": DeviceProbe,
+    "deployment-result.schema.json": DeploymentResult,
     "optimize-request.schema.json": OptimizeRequest,
     "postprocess.schema.json": ArgMaxPostprocess,
     "run-report.schema.json": RunReport,

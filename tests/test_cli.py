@@ -23,6 +23,7 @@ def test_schema_export_command(tmp_path: Path) -> None:
     assert result.exit_code == 0
     assert (tmp_path / "device-discovery.schema.json").is_file()
     assert (tmp_path / "device-probe.schema.json").is_file()
+    assert (tmp_path / "deployment-result.schema.json").is_file()
     assert (tmp_path / "optimize-request.schema.json").is_file()
     assert (tmp_path / "postprocess.schema.json").is_file()
     assert (tmp_path / "run-report.schema.json").is_file()

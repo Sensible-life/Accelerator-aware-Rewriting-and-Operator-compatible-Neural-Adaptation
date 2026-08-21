@@ -22,6 +22,9 @@ models/downloads/
 ARONA_PROJECT_GUIDE.md
 study/
 
+# Local work-in-progress logs and command evidence; never commit these notes.
+worklogs/
+
 # Local editor and operating-system files.
 .idea/
 .vscode/

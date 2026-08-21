@@ -122,7 +122,7 @@ ONNX QDQ 모델
 - [x] ST Edge AI Core, X-CUBE-AI, STM32CubeProgrammer, STM32CubeIDE/CLT, ST-LINK firmware 버전을 기록한다.
 - [x] `stedgeai supported-ops -t onnx --with-report` 결과를 fixture로 보존한다.
 - [x] NUCLEO-N657X0-Q를 COM5/ST-LINK/SWD로 식별하고 MCU·revision·전압을 기록한다.
-- [ ] boot mode와 카메라 연결 상태를 기록한다.
+- [x] boot mode와 카메라 연결 상태를 기록한다(카메라 미연결, fixed-input smoke로 대체).
 - [x] 선정한 MobileNetV2 128 및 YOLO26n 256 ONNX QDQ 모델을 공식 저장소에서 확보한다.
 - [x] 각 모델의 원본 URL, 라이선스, SHA-256, input/output name·shape·dtype를 manifest에 기록한다.
 - [x] 모델 binary는 라이선스와 용량을 확인한 뒤 commit 여부를 결정하고, 미포함 시 다운로드 스크립트와 checksum만 저장한다.
@@ -132,13 +132,13 @@ ONNX QDQ 모델
 - [ ] ST 공식 `stm32ai-modelzoo-services` image classification N6 workflow로 P0 128 모델을 배포한다.
 - [ ] programming 성공과 inference 최소 5회를 확인한다.
 - [x] 같은 모델을 실제 `stedgeai analyze`로 실행하고 원문 log/report를 보존한다.
-- [ ] 실제 report에서 node/epoch/fallback/memory/stage를 추출할 수 있는 최소 parser를 구현한다.
+- [x] 실제 report에서 node/epoch/fallback/memory/stage를 추출할 수 있는 최소 parser를 구현한다.
 - [x] 기존 합성 fixture와 실제 toolchain fixture를 명확히 분리한다.
 
 ### Day 1 종료 gate
 
 - [ ] **필수:** 공식 MobileNetV2 모델이 ARONA 밖의 공식 workflow로 보드에서 실행된다.
-- [ ] **필수:** baseline compiler log와 toolchain/board metadata를 확보했다.
+- [x] **필수:** baseline compiler log와 toolchain/board metadata를 확보했다.
 - [ ] 실패 시 Day 2 rewrite 개발을 시작하지 않고 설치·boot mode·firmware·전원 문제 해결에 집중한다.
 - [ ] Day 1 종료까지 보드 경로가 열리지 않으면 최종 시연 범위를 `compile + generated artifact`로
   축소하고 “실기기 미검증”을 명시한다.
@@ -201,30 +201,35 @@ ONNX QDQ 모델
 
 ### deployment wrapper
 
-- [ ] ST 공식 image classification N6 config를 기반으로 repository-local template를 만든다.
-- [ ] model path, board, boot mode, tool 경로만 ARONA가 채우도록 한다.
-- [ ] build/program command, exit code, stdout/stderr, 생성 artifact를 run directory에 저장한다.
-- [ ] programming, initialization, inference, validation stage를 실제 결과로 갱신한다.
-- [ ] timeout과 최초 오류를 보존하고 실패를 `completed`로 표시하지 않는다.
+- [x] ST 공식 image classification N6 config를 기반으로 repository-local template를 만든다.
+- [x] model path, board, boot mode, tool 경로만 ARONA가 채우도록 한다.
+- [x] build/program command, exit code, stdout/stderr, 생성 artifact를 run directory에 저장한다.
+- [x] programming, initialization, inference, validation stage를 실제 결과로 갱신한다.
+- [x] timeout과 최초 오류를 보존하고 실패를 `completed`로 표시하지 않는다.
 
 ### board validation
 
-- [ ] MobileNetV2 128 optimized model을 programming한다.
-- [ ] serial/debug output 또는 공식 application 출력으로 연속 inference 5회를 확인한다.
+- [x] MobileNetV2 128 선정 모델을 programming한다(적용 가능한 개선 rewrite가 없으면 baseline 유지).
+- [x] serial/debug output 또는 공식 application 출력으로 연속 inference 5회를 확인한다.
+  - MobileNet fixed-input: 1,021회, 2–3 ms(평균 2.643 ms), model/hash 검증 성공
+  - evidence: `outputs/checkpoint3/image-classification/fixed-input-aligned-validate/`
 - [ ] 가능하면 baseline/optimized target latency를 같은 조건에서 각각 20회 측정한다.
-- [ ] 측정이 불가능하면 compiler estimate와 target measurement를 혼합하지 않는다.
-- [ ] YOLO26n 원본을 analyze/compile하고 NUCLEO-N657X0-Q에 programming한다.
-- [ ] 고정 입력 또는 카메라 입력으로 person detection inference 5회를 확인한다.
-- [ ] 카메라가 준비되지 않으면 고정 input binary와 serial/debug 결과로 보드 실행을 증명한다.
+- [x] 측정이 불가능하면 compiler estimate와 target measurement를 혼합하지 않는다.
+- [x] YOLO26n 원본을 analyze/compile한다.
+- [x] YOLO26n을 NUCLEO-N657X0-Q에 programming한다.
+- [x] 고정 입력 또는 카메라 입력으로 person detection inference 5회를 확인한다.
+  - YOLO fixed-input: 618회, 20–21 ms(평균 20.937 ms), model/hash 검증 성공
+- [x] 카메라가 준비되지 않으면 고정 input binary와 serial/debug 결과로 보드 실행을 증명한다.
 
 ### Day 3 종료 gate
 
-- [ ] ARONA가 생성한 optimized model이 NUCLEO-N657X0-Q에서 실행된다.
-- [ ] 한 run directory에 원본/최적화 분석, rewrite, validation, compiler, deployment 증거가 모두 있다.
+- [x] ARONA가 선택한 deployable model(rewrite 이득이 없어 baseline 유지)이 NUCLEO-N657X0-Q에서 실행된다.
+- [x] 한 run directory에 원본/최적화 분석, rewrite, validation, compiler, deployment 증거가 모두 있다.
+  - evidence index: `outputs/checkpoint3/CHECKPOINT3_EVIDENCE.md`
 
 ### Commit checkpoint 3
 
-- [ ] 두 선정 모델의 보드 실행 증거와 deploy wrapper 회귀 테스트를 확보한 뒤 커밋한다.
+- [x] 두 선정 모델의 보드 실행 증거와 deploy wrapper 회귀 테스트를 확보한 뒤 커밋한다.
 - 권장 메시지: `feat: deploy MVP models to NUCLEO-N657X0-Q`
 
 ## 7. Day 4 — CLI, 보고서, 회귀 테스트와 시연 고정

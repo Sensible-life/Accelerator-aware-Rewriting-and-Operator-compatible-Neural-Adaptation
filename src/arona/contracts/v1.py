@@ -111,6 +111,11 @@ class DeploymentStageName(StrEnum):
     VALIDATION = "validation"
 
 
+class DeploymentApplication(StrEnum):
+    IMAGE_CLASSIFICATION = "image_classification"
+    OBJECT_DETECTION = "object_detection"
+
+
 class StageStatus(StrEnum):
     PENDING = "pending"
     RUNNING = "running"
@@ -382,6 +387,28 @@ class DeploymentStage(ContractModel):
     artifacts: list[ArtifactRef] = Field(default_factory=list)
 
 
+class InferenceObservation(ContractModel):
+    sequence: Annotated[int, Field(ge=1)]
+    observed_at: datetime
+    success: bool
+    latency_ms: NonNegativeFloat | None = None
+    summary: NonEmptyString
+
+
+class DeploymentResult(ContractModel):
+    schema_version: ContractVersion = CONTRACT_VERSION
+    status: StageStatus
+    application: DeploymentApplication
+    board: NonEmptyString
+    serial_port: str | None = None
+    boot_mode: str | None = None
+    model: ArtifactRef | None = None
+    firmware: list[ArtifactRef] = Field(default_factory=list)
+    stages: list[DeploymentStage] = Field(default_factory=list)
+    observations: list[InferenceObservation] = Field(default_factory=list)
+    reason: str | None = None
+
+
 class MemoryResource(ContractModel):
     name: NonEmptyString
     kind: MemoryKind
@@ -523,5 +550,6 @@ class RunReport(ContractModel):
     optimized: CompilationAnalysis | None = None
     rewrites: list[RewriteRecord] = Field(default_factory=list)
     decision: OptimizationDecision | None = None
+    deployment: DeploymentResult | None = None
     artifacts: list[ArtifactRef] = Field(default_factory=list)
     diagnostics: list[Diagnostic] = Field(default_factory=list)

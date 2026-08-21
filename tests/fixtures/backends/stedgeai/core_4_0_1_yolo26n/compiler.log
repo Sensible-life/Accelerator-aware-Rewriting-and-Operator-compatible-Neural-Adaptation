@@ -1,0 +1,20 @@
+Command: C:\ST\STEdgeAI\4.0\Utilities\windows\stedgeai.exe analyze --target stm32n6 --model yolo26n.onnx --type onnx --st-neural-art
+Exit code: 0
+Duration ms: 19426.375
+STDOUT:
+ weights (ro)       :   2,461,073 B (2.35 MiB) (1 segment)
+ activations (rw)   :   737,280 B (720.00 KiB) (2 segments)
+	npuRAM4    [0x34270000 - 0x342E0000]:    280.000 kB /    448.000 kB  ( 62.50 % used) -- weights:          0  B (  0.00 % used)  activations:    280.000 kB ( 62.50 % used)
+	npuRAM5    [0x342E0000 - 0x34350000]:    440.000 kB /    448.000 kB  ( 98.21 % used) -- weights:          0  B (  0.00 % used)  activations:    440.000 kB ( 98.21 % used)
+	octoFlash  [0x71000000 - 0x78000000]:      2.347 MB /    112.000 MB  (  2.10 % used) -- weights:      2.347 MB (  2.10 % used)  activations:          0  B (  0.00 % used)
+	npuRAM4    [0x34270000 - 0x342E0000]: 0x34270000-0x342B6000
+	npuRAM5    [0x342E0000 - 0x34350000]: 0x342E0000-0x3434E000
+	octoFlash  [0x71000000 - 0x78000000]: 0x71000000-0x71258DA0
+Total number of epochs                               176
+>> pure software (SW) epochs                          14
+>> hybrid epochs (using both software and hardware)   16
+>> pure hardware (HW or EC) epochs                   146
+| epoch_71  |   SW   |       Conv       |
+| epoch_72  |   SW   |       Conv       |
+| epoch_77  |   SW   |     Softmax      |
+STDERR:

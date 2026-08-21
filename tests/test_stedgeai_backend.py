@@ -22,6 +22,22 @@ def test_explicit_stedgeai_path_is_discovered(monkeypatch, tmp_path: Path) -> No
     assert _resolve_stedgeai_executable() == str(executable.resolve())
 
 
+def test_newest_standalone_stedgeai_is_preferred(monkeypatch, tmp_path: Path) -> None:
+    install_root = tmp_path / "STEdgeAI"
+    old = install_root / "3.0/Utilities/windows/stedgeai.exe"
+    newest = install_root / "4.0/Utilities/windows/stedgeai.exe"
+    old.parent.mkdir(parents=True)
+    newest.parent.mkdir(parents=True)
+    old.touch()
+    newest.touch()
+    monkeypatch.delenv("ARONA_STEDGEAI_PATH", raising=False)
+    monkeypatch.delenv("STEDGEAI_CORE_DIR", raising=False)
+    monkeypatch.setenv("ARONA_STEDGEAI_INSTALL_ROOT", str(install_root))
+    monkeypatch.setattr("arona.backends.stedgeai.adapter.shutil.which", lambda _: None)
+
+    assert _resolve_stedgeai_executable() == str(newest.resolve())
+
+
 def test_captured_command_failure_is_preserved(tmp_path: Path) -> None:
     compiler_log = FIXTURES / "core_2_2_ir_version_failure/compiler.log"
     model_path = tmp_path / "model.onnx"
@@ -47,6 +63,35 @@ def test_conmamba_fallback_epoch_and_memory_fixture() -> None:
     assert parsed.epochs.software_epochs == expected["software_epochs"]
     assert parsed.largest_contiguous_buffer_bytes == expected["largest_contiguous_buffer_bytes"]
     assert any(pool.name == "HYPERRAM_ACTIVATION" for pool in parsed.compiler_pools)
+
+
+def test_core_4_report_epoch_fallback_and_memory_fixture() -> None:
+    parsed = parse_stedgeai_log(FIXTURES / "core_4_0_1_yolo26n/compiler.log")
+
+    assert parsed.exit_code == 0
+    assert parsed.duration_ms == 19426.375
+    assert parsed.epochs.total_epochs == 176
+    assert parsed.epochs.accelerator_epochs == 162
+    assert parsed.epochs.software_epochs == 14
+    assert parsed.activation_total_bytes == 737_280
+    assert parsed.activation_accelerator_bytes == 737_280
+    assert parsed.activation_cpu_bytes == 0
+    assert parsed.largest_contiguous_buffer_bytes == 450_560
+    assert {item.name: item.size_bytes for item in parsed.compiler_pools} == {
+        "npuRAM4": 286_720,
+        "npuRAM5": 450_560,
+        "octoFlash": 2_461_088,
+    }
+    assert (
+        next(
+            item.size_bytes for item in parsed.storage_allocations if item.storage_class == "weight"
+        )
+        == 2_461_073
+    )
+    assert {item.op_type: item.count for item in parsed.fallback_operators} == {
+        "Conv": 2,
+        "Softmax": 1,
+    }
 
 
 def test_missing_hyperram_is_deployability_failure_not_operator_failure(tmp_path: Path) -> None:

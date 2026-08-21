@@ -1,0 +1,31 @@
+schema_version: 1
+target:
+  board: NUCLEO-N657X0-Q
+  mcu: STM32N657
+  accelerator: ST Neural-ART
+  programming_boot_mode: development
+  validation_boot_mode: flash
+  serial_port: COM5
+  serial_baud_rate: 115200
+
+tools:
+  programmer_env: STM32_PRG_PATH
+  programmer_executable: STM32_Programmer_CLI.exe
+  external_loader: ExternalLoader/MX25UM51245G_STM32N6570-NUCLEO.stldr
+  required_stedgeai_core: 4.0.1
+
+official_application:
+  image_classification: https://github.com/STMicroelectronics/STM32N6-GettingStarted-ImageClassification
+  object_detection: https://github.com/STMicroelectronics/STM32N6-GettingStarted-ObjectDetection
+  board_subdirectory: Application/NUCLEO-N657X0-Q
+  build_target: sign
+  screen_interface: UVCL
+
+programming:
+  fsbl: FSBL/ai_fsbl.hex
+  application_binary_address: "0x70100000"
+  network_data: Model/NUCLEO-N657X0-Q/network_data.hex
+
+validation:
+  minimum_inferences: 5
+  telemetry_format: "ARONA_INFERENCE seq=<n> latency_ms=<value> <summary>"

@@ -1,0 +1,369 @@
+{
+  "$defs": {
+    "ArtifactKind": {
+      "enum": [
+        "input_model",
+        "optimized_model",
+        "deployable",
+        "compiler_log",
+        "analysis",
+        "validation",
+        "rewrite_history",
+        "report",
+        "other"
+      ],
+      "title": "ArtifactKind",
+      "type": "string"
+    },
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "kind": {
+          "$ref": "#/$defs/ArtifactKind"
+        },
+        "media_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Media Type"
+        },
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sha256"
+        },
+        "size_bytes": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Size Bytes"
+        }
+      },
+      "required": [
+        "kind",
+        "path"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "DeploymentApplication": {
+      "enum": [
+        "image_classification",
+        "object_detection"
+      ],
+      "title": "DeploymentApplication",
+      "type": "string"
+    },
+    "DeploymentStage": {
+      "additionalProperties": false,
+      "properties": {
+        "artifacts": {
+          "items": {
+            "$ref": "#/$defs/ArtifactRef"
+          },
+          "title": "Artifacts",
+          "type": "array"
+        },
+        "command": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Command",
+          "type": "array"
+        },
+        "duration_ms": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Duration Ms"
+        },
+        "ended_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ended At"
+        },
+        "exit_code": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Exit Code"
+        },
+        "first_error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "First Error"
+        },
+        "previous_warnings": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Previous Warnings",
+          "type": "array"
+        },
+        "stage": {
+          "$ref": "#/$defs/DeploymentStageName"
+        },
+        "started_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Started At"
+        },
+        "status": {
+          "$ref": "#/$defs/StageStatus"
+        }
+      },
+      "required": [
+        "stage",
+        "status"
+      ],
+      "title": "DeploymentStage",
+      "type": "object"
+    },
+    "DeploymentStageName": {
+      "enum": [
+        "parse",
+        "optimize",
+        "partition",
+        "codegen",
+        "scheduling",
+        "link",
+        "signing",
+        "programming",
+        "initialization",
+        "inference",
+        "validation"
+      ],
+      "title": "DeploymentStageName",
+      "type": "string"
+    },
+    "InferenceObservation": {
+      "additionalProperties": false,
+      "properties": {
+        "latency_ms": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Latency Ms"
+        },
+        "observed_at": {
+          "format": "date-time",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "sequence": {
+          "minimum": 1,
+          "title": "Sequence",
+          "type": "integer"
+        },
+        "success": {
+          "title": "Success",
+          "type": "boolean"
+        },
+        "summary": {
+          "minLength": 1,
+          "title": "Summary",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sequence",
+        "observed_at",
+        "success",
+        "summary"
+      ],
+      "title": "InferenceObservation",
+      "type": "object"
+    },
+    "StageStatus": {
+      "enum": [
+        "pending",
+        "running",
+        "succeeded",
+        "warning",
+        "failed",
+        "skipped"
+      ],
+      "title": "StageStatus",
+      "type": "string"
+    }
+  },
+  "$id": "https://arona.dev/schemas/v0.1.0/deployment-result.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "application": {
+      "$ref": "#/$defs/DeploymentApplication"
+    },
+    "board": {
+      "minLength": 1,
+      "title": "Board",
+      "type": "string"
+    },
+    "boot_mode": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Boot Mode"
+    },
+    "firmware": {
+      "items": {
+        "$ref": "#/$defs/ArtifactRef"
+      },
+      "title": "Firmware",
+      "type": "array"
+    },
+    "model": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "observations": {
+      "items": {
+        "$ref": "#/$defs/InferenceObservation"
+      },
+      "title": "Observations",
+      "type": "array"
+    },
+    "reason": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Reason"
+    },
+    "schema_version": {
+      "const": "0.1.0",
+      "default": "0.1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "serial_port": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Serial Port"
+    },
+    "stages": {
+      "items": {
+        "$ref": "#/$defs/DeploymentStage"
+      },
+      "title": "Stages",
+      "type": "array"
+    },
+    "status": {
+      "$ref": "#/$defs/StageStatus"
+    }
+  },
+  "required": [
+    "status",
+    "application",
+    "board"
+  ],
+  "title": "DeploymentResult",
+  "type": "object"
+}

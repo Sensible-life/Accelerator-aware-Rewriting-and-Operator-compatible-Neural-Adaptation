@@ -481,6 +481,111 @@
       "title": "ConnectionType",
       "type": "string"
     },
+    "DeploymentApplication": {
+      "enum": [
+        "image_classification",
+        "object_detection"
+      ],
+      "title": "DeploymentApplication",
+      "type": "string"
+    },
+    "DeploymentResult": {
+      "additionalProperties": false,
+      "properties": {
+        "application": {
+          "$ref": "#/$defs/DeploymentApplication"
+        },
+        "board": {
+          "minLength": 1,
+          "title": "Board",
+          "type": "string"
+        },
+        "boot_mode": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Boot Mode"
+        },
+        "firmware": {
+          "items": {
+            "$ref": "#/$defs/ArtifactRef"
+          },
+          "title": "Firmware",
+          "type": "array"
+        },
+        "model": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ArtifactRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "observations": {
+          "items": {
+            "$ref": "#/$defs/InferenceObservation"
+          },
+          "title": "Observations",
+          "type": "array"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reason"
+        },
+        "schema_version": {
+          "const": "0.1.0",
+          "default": "0.1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "serial_port": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Serial Port"
+        },
+        "stages": {
+          "items": {
+            "$ref": "#/$defs/DeploymentStage"
+          },
+          "title": "Stages",
+          "type": "array"
+        },
+        "status": {
+          "$ref": "#/$defs/StageStatus"
+        }
+      },
+      "required": [
+        "status",
+        "application",
+        "board"
+      ],
+      "title": "DeploymentResult",
+      "type": "object"
+    },
     "DeploymentStage": {
       "additionalProperties": false,
       "properties": {
@@ -897,6 +1002,51 @@
         "accelerator_cpu_transitions"
       ],
       "title": "GraphSummary",
+      "type": "object"
+    },
+    "InferenceObservation": {
+      "additionalProperties": false,
+      "properties": {
+        "latency_ms": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Latency Ms"
+        },
+        "observed_at": {
+          "format": "date-time",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "sequence": {
+          "minimum": 1,
+          "title": "Sequence",
+          "type": "integer"
+        },
+        "success": {
+          "title": "Success",
+          "type": "boolean"
+        },
+        "summary": {
+          "minLength": 1,
+          "title": "Summary",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sequence",
+        "observed_at",
+        "success",
+        "summary"
+      ],
+      "title": "InferenceObservation",
       "type": "object"
     },
     "MemoryKind": {
@@ -2037,6 +2187,17 @@
       "anyOf": [
         {
           "$ref": "#/$defs/OptimizationDecision"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "deployment": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/DeploymentResult"
         },
         {
           "type": "null"

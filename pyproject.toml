@@ -17,6 +17,7 @@ dependencies = [
   "onnx>=1.17",
   "onnxruntime>=1.20",
   "pydantic>=2.10",
+  "pyserial>=3.5",
   "pyyaml>=6.0",
   "typer>=0.15",
 ]
@@ -39,6 +40,9 @@ packages = ["src/arona"]
 [tool.pytest.ini_options]
 addopts = "--strict-config --strict-markers"
 testpaths = ["tests"]
+markers = [
+  "hardware: tests that require a physically connected STM32 board",
+]
 
 [tool.coverage.run]
 branch = true
