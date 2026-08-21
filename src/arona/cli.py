@@ -11,11 +11,14 @@ from arona.pipeline.analyze import analyze_model, discover_stedgeai
 from arona.reporting.markdown import render_markdown_report
 from arona.reporting.terminal import render_discovery, render_run_report
 
+# denote arona as an app
 app = typer.Typer(
     name="arona",
     help="Optimize ONNX models for detected edge accelerators.",
     no_args_is_help=True,
 )
+
+# create schema subcommand(ex: arona schema export)
 schema_app = typer.Typer(help="Inspect and export backend/pipeline/CLI contracts.")
 app.add_typer(schema_app, name="schema")
 

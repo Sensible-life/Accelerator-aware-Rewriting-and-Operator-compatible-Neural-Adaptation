@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import onnx
@@ -5,6 +6,7 @@ from onnx import TensorProto, helper
 
 from arona.backends.stedgeai import StEdgeAiAdapter
 from arona.backends.stedgeai.parsers import parse_stedgeai_log
+from arona.contracts.v1 import CompilationAnalysis
 from arona.onnx_frontend.loader import load_onnx_model_info
 
 ROOT = Path(__file__).parents[1]
@@ -13,10 +15,13 @@ FIXTURES = ROOT / "tests/fixtures/backends/stedgeai"
 
 def test_conmamba_fallback_epoch_and_memory_fixture() -> None:
     parsed = parse_stedgeai_log(FIXTURES / "conmamba_fallback/compiler.log")
+    expected = _expected("conmamba_fallback")
 
-    assert parsed.epochs.total_epochs == 2072
-    assert parsed.epochs.software_epochs == 1530
-    assert parsed.largest_contiguous_buffer_bytes == 827392
+    assert parsed.epochs.total_epochs == expected["total_epochs"]
+    assert parsed.epochs.software_epochs == expected["software_epochs"]
+    assert parsed.largest_contiguous_buffer_bytes == expected[
+        "largest_contiguous_buffer_bytes"
+    ]
     assert any(pool.name == "HYPERRAM_ACTIVATION" for pool in parsed.compiler_pools)
 
 
@@ -32,14 +37,14 @@ def test_missing_hyperram_is_deployability_failure_not_operator_failure(tmp_path
         model=model,
         target=probe.target,
     )
+    expected = _expected("conmamba_fallback")
 
     assert analysis.resources is not None
-    assert analysis.resources.deployable == "infeasible"
+    assert analysis.resources.deployable == expected["deployable"]
     assert analysis.graph.unsupported_nodes == 0
-    assert any(
-        diagnostic.code == "memory_pool_not_on_board"
-        for diagnostic in analysis.resources.diagnostics
-    )
+    assert _pool_feasibility(analysis) == expected["compiler_pools"]
+    assert _storage_feasibility(analysis) == expected["storage_allocations"]
+    assert _diagnostic_codes(analysis) == set(expected["diagnostic_codes"])
 
 
 def test_xip_fixture_maps_to_real_board_regions(tmp_path: Path) -> None:
@@ -54,10 +59,44 @@ def test_xip_fixture_maps_to_real_board_regions(tmp_path: Path) -> None:
         model=model,
         target=probe.target,
     )
+    expected = _expected("conmamba_xip_101")
 
     assert analysis.resources is not None
-    assert analysis.resources.deployable == "feasible"
-    assert analysis.epochs.software_epochs == 1200
+    assert analysis.resources.deployable == expected["deployable"]
+    assert analysis.epochs.software_epochs == expected["software_epochs"]
+    assert _pool_feasibility(analysis) == expected["compiler_pools"]
+    assert _storage_feasibility(analysis) == expected["storage_allocations"]
+    assert _diagnostic_codes(analysis) == set(expected["diagnostic_codes"])
+
+
+def _expected(case_id: str) -> dict[str, object]:
+    path = FIXTURES / case_id / "expected-analysis.json"
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _pool_feasibility(analysis: CompilationAnalysis) -> dict[str, str]:
+    resources = analysis.resources
+    assert resources is not None
+    return {pool.name: str(pool.feasible) for pool in resources.compiler_pools}
+
+
+def _storage_feasibility(analysis: CompilationAnalysis) -> dict[str, str]:
+    resources = analysis.resources
+    assert resources is not None
+    return {
+        str(allocation.storage_class): str(allocation.feasible)
+        for allocation in resources.storage_allocations
+    }
+
+
+def _diagnostic_codes(analysis: CompilationAnalysis) -> set[str]:
+    resources = analysis.resources
+    assert resources is not None
+    return {
+        diagnostic.code
+        for diagnostic in resources.diagnostics
+        if diagnostic.code is not None
+    }
 
 
 def _write_three_node_model(path: Path) -> None:

@@ -1,0 +1,25 @@
+{
+  "total_epochs": 2072,
+  "accelerator_epochs": 872,
+  "software_epochs": 1200,
+  "deployable": "feasible",
+  "largest_contiguous_buffer_bytes": 620000,
+  "fallback_operators": {
+    "Gather": 390,
+    "Reshape": 240
+  },
+  "compiler_pools": {
+    "AXISRAM_ACTIVATION": "feasible",
+    "XSPI1_FLASH_CONST": "feasible"
+  },
+  "storage_allocations": {
+    "code": "feasible",
+    "rodata": "feasible",
+    "weight": "feasible",
+    "activation": "feasible",
+    "data_bss": "feasible",
+    "heap": "feasible",
+    "stack": "feasible"
+  },
+  "diagnostic_codes": []
+}
