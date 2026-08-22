@@ -2,6 +2,7 @@
 .uv-cache/
 .uv-python/
 .pytest_cache/
+.pytest-tmp/
 .ruff_cache/
 .mypy_cache/
 .coverage
@@ -17,6 +18,8 @@ outputs/
 
 # Third-party model binaries are downloaded locally; commit only their manifest/checksums.
 models/downloads/
+models/*.onnx
+inputs/
 
 # Local study notes and scratch files.
 ARONA_PROJECT_GUIDE.md

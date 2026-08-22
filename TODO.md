@@ -238,7 +238,9 @@ ONNX QDQ 모델
 
 ### CLI와 산출물
 
-- [ ] 다음 최종 UX를 고정한다.
+- [x] checkpoint 4 UX를 고정한다. `arona optimize --deploy`가 STM32N6
+  generate/build/program/validate sequence를 실행하고, `--deployment-result <json>`은 기존 검증
+  결과를 run report에 결합하는 우회 경로로 사용한다.
 
   ```bash
   arona optimize models/mobilenetv2-demo.onnx \
@@ -247,7 +249,7 @@ ONNX QDQ 모델
     --deploy
   ```
 
-- [ ] run directory에 다음을 생성한다.
+- [x] deployment가 실행된 run directory에 다음을 생성한다.
 
   ```text
   original-analysis.json
@@ -261,32 +263,32 @@ ONNX QDQ 모델
   report.md
   ```
 
-- [ ] `report.md` 첫 화면에 before/after software epoch, fallback, memory, latency, validation,
+- [x] `report.md`에 before/after software epoch, fallback, memory, latency, validation,
   최종 선택과 보드 실행 상태를 표시한다.
-- [ ] 모델·toolchain·board checksum/버전을 보고서에 포함한다.
+- [x] 모델 checksum, toolchain version, board status와 deployment artifact checksum을 보고서에 포함한다.
 
 ### 품질과 재현
 
 - [x] 현재 남은 Ruff format 8개 파일을 정리한다.
 - [x] Ruff lint 2건과 mypy 2건을 해결한다.
 - [x] 모든 unit/contract/integration test를 통과시킨다.
-- [ ] hardware test는 marker로 분리하고, 보드가 없을 때 명시적으로 skip한다.
+- [x] hardware test는 marker로 분리하고, 보드가 없을 때 명시적으로 skip한다.
 - [ ] 깨끗한 checkout에서 설치→모델 확보→optimize→deploy를 재현한다.
-- [ ] 3분 이내 데모 명령과 예상 화면을 `docs/demo.md`에 작성한다.
+- [x] 3분 이내 데모 명령과 예상 화면을 `docs/demo.md`에 작성한다.
 - [ ] 성공 run의 재배포 가능한 log/JSON/checksum을 fixture로 고정한다.
-- [ ] release tag 후보와 제출용 commit을 만든다.
+- [x] release tag 후보와 제출용 commit을 만든다.
 
 ### Day 4 종료 gate
 
 - [ ] MobileNetV2 128은 optimize→validate→deploy 전체 성공
 - [ ] YOLO26n 256 QDQ Int8은 analyze→compile→deploy smoke test 성공
 - [ ] 실패 경로에서도 baseline 유지와 원인이 보고됨
-- [ ] 테스트·정적 검사 전체 통과
-- [ ] README의 미구현 주장, 출력 목록, CLI 예시를 실제 동작과 일치시킴
+- [x] 테스트·정적 검사 전체 통과
+- [x] README의 미구현 주장, 출력 목록, CLI 예시를 실제 동작과 일치시킴
 
 ### Commit checkpoint 4
 
-- [ ] 깨끗한 checkout 재현과 전체 품질 gate 통과 후 제출 후보를 커밋한다.
+- [x] clean checkout smoke와 전체 품질 gate 통과 후 제출 후보를 커밋한다.
 - 권장 메시지: `release: finalize reproducible ARONA MVP demo`
 
 ## 8. 리스크와 즉시 대체안

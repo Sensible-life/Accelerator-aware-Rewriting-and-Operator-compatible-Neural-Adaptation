@@ -1,6 +1,6 @@
 """Compact terminal rendering for analysis results."""
 
-from arona.contracts.v1 import CompilationAnalysis, DeviceDiscovery, RunReport
+from arona.contracts.v1 import CompilationAnalysis, DeviceDiscovery, RunReport, ToolInfo
 
 
 def render_discovery(discovery: DeviceDiscovery) -> str:
@@ -32,8 +32,11 @@ def render_run_report(report: RunReport) -> str:
         "",
         "Target environment",
         f"  backend: {report.target.backend_name}",
+        f"  backend version: {report.target.backend_version}",
         f"  board: {report.target.device.model if report.target.device else 'unknown'}",
         f"  accelerator: {report.target.device.accelerator if report.target.device else 'unknown'}",
+        f"  compiler: {_format_tool(report.target.toolchain.compiler)}",
+        f"  debugger/programmer: {_format_tool(report.target.toolchain.debugger)}",
     ]
     if report.baseline is not None:
         lines.extend(["", *_render_analysis("Baseline", report.baseline)])
@@ -56,7 +59,50 @@ def render_run_report(report: RunReport) -> str:
         )
         for reason in report.decision.reasons:
             lines.append(f"  reason: {reason}")
+    if report.deployment is not None:
+        lines.extend(
+            [
+                "",
+                "Board deployment",
+                f"  application: {report.deployment.application}",
+                f"  board: {report.deployment.board}",
+                f"  status: {report.deployment.status}",
+                f"  serial port: {report.deployment.serial_port or 'unknown'}",
+                f"  boot mode: {report.deployment.boot_mode or 'unknown'}",
+            ]
+        )
+        if report.deployment.reason:
+            lines.append(f"  reason: {report.deployment.reason}")
+        if report.deployment.stages:
+            lines.append("  stages:")
+            for stage in report.deployment.stages:
+                suffix = f" exit={stage.exit_code}" if stage.exit_code is not None else ""
+                error = f" - {stage.first_error}" if stage.first_error else ""
+                lines.append(f"    [{stage.status}] {stage.stage}{suffix}{error}")
+        if report.deployment.observations:
+            successful = sum(observation.success for observation in report.deployment.observations)
+            latencies = [
+                observation.latency_ms
+                for observation in report.deployment.observations
+                if observation.latency_ms is not None
+            ]
+            lines.append(
+                f"  observations: {successful}/{len(report.deployment.observations)} succeeded"
+            )
+            if latencies:
+                lines.append(
+                    "  latency_ms: "
+                    f"min={min(latencies):.3f} "
+                    f"mean={sum(latencies) / len(latencies):.3f} "
+                    f"max={max(latencies):.3f}"
+                )
     return "\n".join(lines)
+
+
+def _format_tool(tool: ToolInfo | None) -> str:
+    if tool is None:
+        return "unknown"
+    return f"{tool.name} {tool.version}".strip()
 
 
 def _render_analysis(label: str, analysis: CompilationAnalysis) -> list[str]:
