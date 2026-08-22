@@ -415,6 +415,13 @@ def _run_live_deployment(
     if program_result.status == StageStatus.FAILED:
         return _merge_deployment_results(results, config)
 
+    typer.echo(
+        "\nProgramming completed. Move JP2 to position 1 (flash boot), "
+        f"power-cycle the board, and wait for {serial_port} to reconnect."
+    )
+    if not typer.confirm("Continue with UART inference validation?", default=False):
+        return _merge_deployment_results(results, config)
+
     validate_result = deployer.validate_serial(
         NucleoDeploymentConfig(
             application=application,
@@ -425,7 +432,7 @@ def _run_live_deployment(
         deployment_directory / "validate",
         minimum_inferences=inference_count,
         capture_seconds=capture_seconds,
-        expected_model_name=expected_model_name,
+        expected_model_name=expected_model_name or selected_model.stem,
         expected_input_fnv1a=expected_input_fnv1a,
     )
     results.append(validate_result)
@@ -709,11 +716,19 @@ def deployment_backup(
         Path,
         typer.Option("--output-directory", "-o", help="Backup and evidence directory."),
     ] = Path("outputs/deployment-backup"),
+    timeout_seconds: Annotated[
+        int,
+        typer.Option(
+            "--timeout-seconds",
+            min=60,
+            help="Timeout for uploading the complete 64 MiB external flash.",
+        ),
+    ] = 600,
 ) -> None:
     """Back up the complete 64 MiB NUCLEO external flash after an exact-board probe."""
 
     result = Stm32N6Deployer().backup_external_flash(
-        NucleoDeploymentConfig(application=application),
+        NucleoDeploymentConfig(application=application, timeout_seconds=timeout_seconds),
         output_directory,
     )
     typer.echo(_render_deployment_result(result))

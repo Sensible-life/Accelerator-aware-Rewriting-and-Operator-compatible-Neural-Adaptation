@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "verified_at": "2026-08-22",
+  "target": {
+    "board": "NUCLEO-N657X0-Q",
+    "mcu": "STM32N657",
+    "device_id": "0x486",
+    "revision": "B",
+    "accelerator": "ST Neural-ART",
+    "serial_port": "COM5",
+    "serial_baud_rate": 115200
+  },
+  "toolchain": {
+    "stedgeai": "ST Edge AI Core v4.0.1-20581 7ed50de05",
+    "stm32cubeprogrammer": "2.22.0",
+    "stlink_firmware": "V3J15M6",
+    "stlink_serial": "004000173234510E37333934"
+  },
+  "pre_deployment_backup": {
+    "address": "0x70000000",
+    "size_bytes": 67108864,
+    "sha256": "acc2fbeb5308230ce6350878138f830440094f53d6d677e16a63771486293dd3"
+  },
+  "models": [
+    {
+      "id": "mobilenetv2-a035-food101-128-qdq",
+      "application": "image_classification",
+      "model": {
+        "path": "models/downloads/mobilenetv2_a035_128_food101_qdq.onnx",
+        "size_bytes": 637534,
+        "sha256": "f998c183a0c117a18c10e1f8d4595e5456aeca9dc933c109ca8e795604188a61"
+      },
+      "compiler": {
+        "total_epochs": 55,
+        "accelerator_epochs": 54,
+        "software_epochs": 1,
+        "activation_bytes": 245760,
+        "weight_bytes": 434833,
+        "deployable": "feasible",
+        "selected": "baseline"
+      },
+      "firmware": {
+        "fsbl_sha256": "8fa77dcdcb9aeed6e167c1ce5ffe9e16071fdeced8d13e22edd31a37abed1993",
+        "signed_application_size_bytes": 587172,
+        "signed_application_sha256": "6b41c407aedc3f8c439ceeced3b41bd38845cf46d612403bf1d9e5d90097c4cf",
+        "network_data_size_bytes": 1141998,
+        "network_data_sha256": "014ccea8e55256d727d5e1b88cde5273ac1040c0edd811da1f7bf94ee97a8ebe",
+        "programming_stages_succeeded": 3
+      },
+      "validation": {
+        "inferences": 343,
+        "successful_inferences": 343,
+        "latency_min_ms": 2.0,
+        "latency_mean_ms": 2.647,
+        "latency_max_ms": 3.0,
+        "observed_model": "mobilenetv2_a035_128_food101_qdq_OE_3_3_1",
+        "fixed_input_fnv1a": "0xfbe51dc5",
+        "serial_log_sha256": "3972fe99697257bc1b672613a7b7792cb53b9138771a5b636b945877f6c7ec74"
+      }
+    },
+    {
+      "id": "yolo26n-coco-person-256-qdq-int8",
+      "application": "object_detection",
+      "model": {
+        "path": "models/downloads/yolo26n_256_coco_person_qdq_int8.onnx",
+        "size_bytes": 2971880,
+        "sha256": "8e3197754d64337db74bde0782293981a40d6a2dad1ebff405e323b81399282e"
+      },
+      "compiler": {
+        "total_epochs": 176,
+        "accelerator_epochs": 162,
+        "software_epochs": 14,
+        "activation_bytes": 737280,
+        "weight_bytes": 2461073,
+        "deployable": "feasible",
+        "selected": "baseline"
+      },
+      "firmware": {
+        "fsbl_sha256": "8fa77dcdcb9aeed6e167c1ce5ffe9e16071fdeced8d13e22edd31a37abed1993",
+        "signed_application_size_bytes": 1593097,
+        "signed_application_sha256": "8d5e32331927a20e9112f82430fe321216d5fef8a85259537dae780bcc294191",
+        "network_data_size_bytes": 6743703,
+        "network_data_sha256": "d087c9d00f2cda04a76087c5c001e091d469bdf0d8ec5dddb43502b6871a5eba",
+        "programming_stages_succeeded": 3
+      },
+      "validation": {
+        "inferences": 150,
+        "successful_inferences": 150,
+        "latency_min_ms": 20.0,
+        "latency_mean_ms": 20.953,
+        "latency_max_ms": 21.0,
+        "observed_model": "yolo26n_256_coco_person_qdq_int8_OE_3_3_1",
+        "fixed_input_fnv1a": "0x6c3e9dc5",
+        "serial_log_sha256": "af5392d242d74603dac35fdb5f43c0c3a0ebada4dab8782c7565323eb8ed81be"
+      }
+    }
+  ]
+}
+

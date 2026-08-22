@@ -98,9 +98,15 @@ checkpoint 3에서 확인한 보드 실행 증거:
 | Image classification | fixed 128x128x3 input, FNV-1a `0xfbe51dc5` | 1,021 runs, 2-3 ms, mean 2.643 ms |
 | Object detection | fixed 256x256x3 input, FNV-1a `0x6c3e9dc5` | 618 runs, 20-21 ms, mean 20.937 ms |
 
+checkpoint 4에서는 같은 경로를 fresh generate/build/program으로 다시 검증해 MobileNet 343회
+(평균 2.647 ms), YOLO26n 150회(평균 20.953 ms)를 확인했다. 정확한 toolchain, firmware,
+artifact checksum과 clean-checkout 상태는 [checkpoint 4 E2E evidence](checkpoint4-e2e-evidence.md)에
+고정한다.
+
 `arona optimize --deploy`는 checkpoint 4에서 STM32N6 `generate -> build -> program -> validate`
-sequence를 직접 실행한다. 이미 생성된 `arona deployment validate` 결과를 재사용해야 할 때만
-`--deployment-result`를 전달한다.
+sequence를 직접 실행한다. Programming이 끝나면 CLI가 멈추므로, 안내에 따라 JP2를 position 1
+(Flash boot)로 옮기고 보드 전원을 다시 연결해 COM 포트가 복구된 뒤 확인 입력을 한다. 이미
+생성된 `arona deployment validate` 결과를 재사용해야 할 때만 `--deployment-result`를 전달한다.
 
 ```powershell
 uv run arona optimize `

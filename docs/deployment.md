@@ -81,7 +81,8 @@ target을 실행한다. 명령, stdout/stderr, exit code, duration과 생성된 
 ```powershell
 arona deployment backup `
   --application image_classification `
-  -o outputs/deployment/board-backup
+  -o outputs/deployment/board-backup `
+  --timeout-seconds 600
 ```
 
 하나의 combined hex 또는 여러 firmware component를 순서대로 전달할 수 있다. `.bin`에는

@@ -225,7 +225,9 @@ def test_optimize_deploy_runs_live_stm32n6_sequence(monkeypatch, tmp_path: Path)
             expected_model_name: str | None,
             expected_input_fnv1a: str | None,
         ) -> DeploymentResult:
-            calls.append(f"validate:{minimum_inferences}:{expected_input_fnv1a}")
+            calls.append(
+                f"validate:{minimum_inferences}:{expected_model_name}:{expected_input_fnv1a}"
+            )
             return _deployment_result(
                 DeploymentStageName.VALIDATION,
                 observations=[
@@ -267,14 +269,16 @@ def test_optimize_deploy_runs_live_stm32n6_sequence(monkeypatch, tmp_path: Path)
             "--output-directory",
             str(tmp_path / "outputs"),
         ],
+        input="y\n",
     )
 
     assert result.exit_code == 0
+    assert "Move JP2 to position 1" in result.stdout
     assert calls == [
         "generate:optimized-model.onnx:Model",
         "build:NUCLEO-N657X0-Q:model-files:8:UVCL",
         "program:3:optimized-model.onnx",
-        "validate:5:0xfbe51dc5",
+        "validate:5:optimized-model:0xfbe51dc5",
     ]
     run_dirs = list((tmp_path / "outputs").iterdir())
     assert len(run_dirs) == 1
@@ -284,6 +288,38 @@ def test_optimize_deploy_runs_live_stm32n6_sequence(monkeypatch, tmp_path: Path)
     report = (run_dirs[0] / "run-report.json").read_text(encoding="utf-8")
     assert '"status": "succeeded"' in report
     assert "optimized-model.onnx" in report
+
+
+def test_deployment_backup_uses_full_flash_timeout(monkeypatch, tmp_path: Path) -> None:
+    from arona import cli
+
+    observed_timeout: list[int] = []
+
+    class FakeDeployer:
+        def backup_external_flash(
+            self,
+            config: object,
+            output_directory: Path,
+        ) -> DeploymentResult:
+            observed_timeout.append(config.timeout_seconds)  # type: ignore[attr-defined]
+            return _deployment_result(DeploymentStageName.VALIDATION)
+
+    monkeypatch.setattr(cli, "Stm32N6Deployer", FakeDeployer)
+
+    result = runner.invoke(
+        app,
+        [
+            "deployment",
+            "backup",
+            "--application",
+            "image_classification",
+            "--output-directory",
+            str(tmp_path / "backup"),
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert observed_timeout == [600]
 
 
 def test_optimize_command_rejects_unknown_target(tmp_path: Path) -> None:

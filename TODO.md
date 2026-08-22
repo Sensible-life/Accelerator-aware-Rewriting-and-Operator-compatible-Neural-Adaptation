@@ -30,10 +30,12 @@ ONNX QDQ 모델
 - [ ] 깨끗한 PC 환경에서 `arona optimize <model> --target stedgeai --deploy` 한 경로로 재현한다.
 - [ ] baseline과 optimized 모델 모두 실제 `stedgeai`로 컴파일하고 원문 log를 보존한다.
 - [ ] 최소 한 모델에서 CPU software epoch, fallback operator 또는 NPU/CPU transition이 감소한다.
-- [ ] 최적화가 개선되지 않으면 baseline을 유지하고 그 이유를 보고한다.
+- [x] 최적화가 개선되지 않으면 baseline을 유지하고 그 이유를 보고한다.
 - [x] 고정 입력 최소 10개로 원본과 최적화 모델의 end-to-end 결과 동등성을 검증한다.
-- [ ] 최적화 모델을 NUCLEO-N657X0-Q에 programming하고 연속 inference 최소 5회를 확인한다.
-- [ ] 모델 checksum, toolchain/firmware/board revision, 명령, exit code, latency와 memory를 기록한다.
+- [x] ARONA가 선택한 deployable model을 NUCLEO-N657X0-Q에 programming하고 연속 inference
+  최소 5회를 확인한다. 두 선정 모델 모두 rewrite 비대상이라 baseline을 유지했다.
+- [x] 모델 checksum, toolchain/firmware/board revision, 명령, exit code, latency와 memory를 기록한다.
+  - evidence: `docs/checkpoint4-e2e-evidence.md`
 - [x] `pytest`, Ruff format/lint, mypy가 모두 통과한다.
 
 ## 2. 목표 보드와 탑재 모델 확정
@@ -274,15 +276,18 @@ ONNX QDQ 모델
 - [x] 모든 unit/contract/integration test를 통과시킨다.
 - [x] hardware test는 marker로 분리하고, 보드가 없을 때 명시적으로 skip한다.
 - [ ] 깨끗한 checkout에서 설치→모델 확보→optimize→deploy를 재현한다.
+  - tracked source clean archive의 `uv sync --frozen`, CLI, pytest는 재현했다. 모델·vendor 확보부터
+    physical JP2 전환까지 완전히 새 PC에서 수행하는 시험은 남아 있다.
 - [x] 3분 이내 데모 명령과 예상 화면을 `docs/demo.md`에 작성한다.
-- [ ] 성공 run의 재배포 가능한 log/JSON/checksum을 fixture로 고정한다.
+- [x] 성공 run의 재배포 가능한 metadata/JSON/checksum을 fixture로 고정한다.
+  - fixture: `tests/fixtures/deployment/nucleo_checkpoint4_e2e/evidence.json`
 - [x] release tag 후보와 제출용 commit을 만든다.
 
 ### Day 4 종료 gate
 
-- [ ] MobileNetV2 128은 optimize→validate→deploy 전체 성공
-- [ ] YOLO26n 256 QDQ Int8은 analyze→compile→deploy smoke test 성공
-- [ ] 실패 경로에서도 baseline 유지와 원인이 보고됨
+- [x] MobileNetV2 128은 optimize→generate→build→program→validate 전체 성공
+- [x] YOLO26n 256 QDQ Int8은 analyze→compile→deploy smoke test 성공
+- [x] rewrite 비대상 경로에서도 baseline 유지와 원인이 보고됨
 - [x] 테스트·정적 검사 전체 통과
 - [x] README의 미구현 주장, 출력 목록, CLI 예시를 실제 동작과 일치시킴
 

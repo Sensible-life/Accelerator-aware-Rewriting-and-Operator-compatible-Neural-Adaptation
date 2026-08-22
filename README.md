@@ -265,10 +265,12 @@ stedgeai --version
 sequence가 실행되면 `deployment/deployment-result.json`, `deployment-analysis.json`과 board
 실행 상태가 `report.md`에 추가됩니다.
 
-checkpoint 3에서는 ST Edge AI Core 4.0.1 기반 NUCLEO-N657X0-Q fixed-input smoke로
-MobileNetV2 image classification 1,021회, YOLO26n object detection 618회 반복 inference를
-확인했습니다. 이 로컬 evidence는 `outputs/checkpoint3/` 아래에 보관되는 실행 산출물이라
-Git에는 포함하지 않으며, 재현 절차와 제출 데모 흐름은 [MVP demo 문서](docs/demo.md)를 참고합니다.
+checkpoint 4 재검증에서는 ST Edge AI Core 4.0.1로 두 모델을 새로 generate/build/program한 뒤
+NUCLEO-N657X0-Q fixed-input smoke에서 MobileNetV2 image classification 343회(평균 2.647 ms),
+YOLO26n object detection 150회(평균 20.953 ms)의 연속 inference를 확인했습니다. 모델과 raw
+실행 산출물은 Git에 포함하지 않으며, checksum과 환경·결과는
+[checkpoint 4 E2E evidence](docs/checkpoint4-e2e-evidence.md), 재현 절차는
+[MVP demo 문서](docs/demo.md)를 참고합니다.
 
 환경 구성, 품질 검사 및 의존성 갱신 방법은 [개발 문서](docs/development.md), 계약의 의미와
 호환성 정책은 [실행 결과 JSON 계약](docs/contracts/backend-cli.md), 직접 의존성의 역할과
