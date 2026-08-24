@@ -1,5 +1,7 @@
 """Command-line entry point for ARONA."""
 
+import os
+import sys
 from pathlib import Path
 from typing import Annotated
 
@@ -18,10 +20,23 @@ from arona.deployment import (
     instrument_uart_telemetry,
     sync_stedgeai_runtime,
 )
+from arona.deployment.stm32n6 import (
+    resolve_external_loader,
+    resolve_gcc_directory,
+    resolve_make,
+    resolve_objcopy,
+    resolve_programmer,
+    resolve_signing_tool,
+)
 from arona.pipeline.analyze import analyze_model, discover_stedgeai
 from arona.pipeline.optimize import optimize_model
 from arona.reporting.markdown import render_markdown_report
-from arona.reporting.terminal import render_discovery, render_run_report
+from arona.reporting.terminal import (
+    render_banner,
+    render_deployment_block,
+    render_discovery,
+    render_run_report,
+)
 
 # denote arona as an app
 app = typer.Typer(
@@ -47,6 +62,10 @@ DEFAULT_IMAGE_CLASSIFICATION_FSBL = Path(
 )
 
 
+if os.getenv("ARONA_UNICODE") and hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+
+
 @app.command()
 def version() -> None:
     """Print the installed ARONA version."""
@@ -59,6 +78,79 @@ def discover() -> None:
 
     discovery = discover_stedgeai()
     typer.echo(render_discovery(discovery))
+
+
+@app.command()
+def doctor(
+    serial_port: Annotated[
+        str | None,
+        typer.Option("--serial-port", help="Known ST-LINK virtual COM port, for example COM3."),
+    ] = None,
+) -> None:
+    """Check local tools required for the STM32N6 MVP workflow."""
+
+    discovery = discover_stedgeai()
+    target = discovery.targets[0] if discovery.targets else None
+    compiler = target.toolchain.compiler if target is not None else None
+    programmer = resolve_programmer()
+    external_loader = resolve_external_loader(programmer)
+    make = resolve_make()
+    gcc_directory = resolve_gcc_directory()
+    objcopy = resolve_objcopy()
+    signing_tool = resolve_signing_tool()
+    detected_serial_port = serial_port or _detect_stlink_serial_port()
+
+    checks = [
+        (
+            "ST Edge AI Core",
+            compiler.version if compiler is not None else None,
+            Path(compiler.executable) if compiler is not None and compiler.executable else None,
+            compiler is not None and target is not None and str(target.availability) == "available",
+        ),
+        ("STM32CubeProgrammer", None, programmer, programmer is not None),
+        ("NUCLEO external loader", None, external_loader, external_loader is not None),
+        ("make", None, make, make is not None),
+        ("Arm GCC", None, gcc_directory, gcc_directory is not None),
+        ("Arm objcopy", None, objcopy, objcopy is not None),
+        ("STM32 signing tool", None, signing_tool, signing_tool is not None),
+        ("ST-LINK serial", detected_serial_port, None, detected_serial_port is not None),
+    ]
+    required_checks = [item for item in checks if item[0] != "ST-LINK serial"]
+    ready = all(item[3] for item in required_checks)
+
+    lines = [
+        *render_banner("Doctor"),
+        "",
+        "Target",
+        f"  board: {target.device.model if target is not None and target.device else 'unknown'}",
+        (
+            "  accelerator: "
+            f"{target.device.accelerator if target is not None and target.device else 'unknown'}"
+        ),
+        "",
+        "Checks",
+    ]
+    for name, version, path, ok in checks:
+        detail = version or (path.as_posix() if path is not None else "missing")
+        lines.append(f"  {_ok_icon(ok)} {name}: {detail}")
+    if detected_serial_port is None:
+        lines.append(
+            "  ! warning: serial port was not auto-detected; "
+            "pass --serial-port COMx during validation"
+        )
+    if target is not None:
+        for issue in target.issues:
+            lines.append(f"  ! warning: {issue}")
+    lines.extend(
+        [
+            "",
+            "Result",
+            "  ready for optimize/deploy" if ready else "  missing required tools",
+        ]
+    )
+    typer.echo("\n".join(lines))
+    if not ready:
+        raise typer.Exit(1)
 
 
 @app.command()
@@ -373,6 +465,8 @@ def _run_live_deployment(
     )
     deployer = Stm32N6Deployer()
 
+    typer.echo("\nDeployment")
+    typer.echo("  - codegen: generating model files")
     generate_result = deployer.generate(
         config,
         selected_model,
@@ -380,10 +474,12 @@ def _run_live_deployment(
         deployment_directory / "generate",
     )
     results = [generate_result]
+    typer.echo(f"  {_stage_icon(generate_result.status)} codegen: {generate_result.status}")
     if generate_result.status != StageStatus.SUCCEEDED:
         return _merge_deployment_results(results, config)
 
     generated_model_directory = deployment_directory / "generate/model-files"
+    typer.echo("  - link: building and signing official application")
     build_result = deployer.build(
         config,
         application_directory,
@@ -394,6 +490,7 @@ def _run_live_deployment(
         screen_interface=screen_interface,
     )
     results.append(build_result)
+    typer.echo(f"  {_stage_icon(build_result.status)} link: {build_result.status}")
     if build_result.status != StageStatus.SUCCEEDED:
         return _merge_deployment_results(results, config)
 
@@ -401,6 +498,7 @@ def _run_live_deployment(
         application_directory / build_top / "Application/NUCLEO-N657X0-Q/Project_sign.hex"
     )
     network_data = generated_model_directory / "network_data.hex"
+    typer.echo("  - programming: flashing FSBL, application, and network data")
     program_result = deployer.program(
         config,
         [
@@ -412,6 +510,7 @@ def _run_live_deployment(
         model_path=selected_model,
     )
     results.append(program_result)
+    typer.echo(f"  {_stage_icon(program_result.status)} programming: {program_result.status}")
     if program_result.status == StageStatus.FAILED:
         return _merge_deployment_results(results, config)
 
@@ -422,6 +521,7 @@ def _run_live_deployment(
     if not typer.confirm("Continue with UART inference validation?", default=False):
         return _merge_deployment_results(results, config)
 
+    typer.echo("  - validation: reading UART inference telemetry")
     validate_result = deployer.validate_serial(
         NucleoDeploymentConfig(
             application=application,
@@ -436,6 +536,7 @@ def _run_live_deployment(
         expected_input_fnv1a=expected_input_fnv1a,
     )
     results.append(validate_result)
+    typer.echo(f"  {_stage_icon(validate_result.status)} validation: {validate_result.status}")
     return _merge_deployment_results(results, config)
 
 
@@ -789,6 +890,34 @@ def deployment_validate(
         raise typer.Exit(1)
 
 
+def _detect_stlink_serial_port() -> str | None:
+    try:
+        from serial.tools import list_ports
+    except ImportError:
+        return None
+    for port in list_ports.comports():
+        text = " ".join(
+            value
+            for value in (port.device, port.description, port.hwid, port.manufacturer)
+            if value
+        ).lower()
+        if "st-link" in text or "stlink" in text or "vid:pid=0483:3754" in text:
+            return str(port.device)
+    return None
+
+
+def _ok_icon(ok: bool) -> str:
+    return "OK" if ok else "FAIL"
+
+
+def _stage_icon(status: object) -> str:
+    if str(status) == "succeeded":
+        return "OK"
+    if str(status) == "failed":
+        return "FAIL"
+    return "!"
+
+
 def _parse_firmware_spec(value: str) -> FirmwareImage:
     path_value, separator, parsed_address = value.rpartition("@")
     address: str | None
@@ -806,21 +935,6 @@ def _parse_firmware_spec(value: str) -> FirmwareImage:
 
 
 def _render_deployment_result(result: object) -> str:
-    from arona.contracts.v1 import DeploymentResult
-
     if not isinstance(result, DeploymentResult):
         raise TypeError("result must be a DeploymentResult")
-    lines = [
-        "STM32N6 deployment",
-        f"  application: {result.application}",
-        f"  board: {result.board}",
-        f"  status: {result.status}",
-    ]
-    for stage in result.stages:
-        lines.append(f"  [{stage.status}] {stage.stage}")
-        if stage.first_error:
-            lines.append(f"    error: {stage.first_error}")
-    lines.append(f"  inference observations: {len(result.observations)}")
-    if result.reason:
-        lines.append(f"  reason: {result.reason}")
-    return "\n".join(lines)
+    return "\n".join(render_deployment_block(result))

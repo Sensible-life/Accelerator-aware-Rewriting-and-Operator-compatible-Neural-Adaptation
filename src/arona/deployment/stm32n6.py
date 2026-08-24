@@ -896,7 +896,11 @@ def resolve_objcopy() -> Path | None:
 
 def _resolve_cubeide_tool(plugin_fragment: str, filename: str) -> Path | None:
     candidates: list[Path] = []
-    for root in (Path("C:/ST/STM32CubeIDE_2.0.0"), Path("C:/ST/STM32CubeIDE_1.19.0")):
+    for root in (
+        Path("C:/ST/STM32CubeIDE_2.2.0"),
+        Path("C:/ST/STM32CubeIDE_2.0.0"),
+        Path("C:/ST/STM32CubeIDE_1.19.0"),
+    ):
         plugin_root = root / "STM32CubeIDE/plugins"
         if plugin_root.is_dir():
             candidates.extend(plugin_root.glob(f"*{plugin_fragment}*/tools/bin/{filename}"))
