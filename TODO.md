@@ -27,10 +27,10 @@ ONNX QDQ 모델
 
 ### MVP 완료 조건
 
-- [ ] 깨끗한 PC 환경에서 `arona optimize <model> --target stedgeai --deploy` 한 경로로 재현한다.
+- [x] 깨끗한 PC 환경에서 `arona optimize <model> --target stedgeai --deploy` 한 경로로 재현한다.
   - 2026-08-24 외부 Windows PC에서 `arona deployment generate -> sync-runtime -> instrument/configure/fixed-input -> build -> program -> validate` 단계별 E2E를 재현했다.
   - MobileNetV2 fixed-input 2,049회, YOLO26n fixed-input 927회 validation 성공.
-  - `optimize --deploy` 단일 명령 재현은 아직 미확인으로 남긴다.
+  - `uv run arona optimize ... --deploy` 단일 명령 재현 성공: `outputs/demo-runs/20260824T001942Z-optimize`.
 - [ ] baseline과 optimized 모델 모두 실제 `stedgeai`로 컴파일하고 원문 log를 보존한다.
 - [ ] 최소 한 모델에서 CPU software epoch, fallback operator 또는 NPU/CPU transition이 감소한다.
 - [x] 최적화가 개선되지 않으면 baseline을 유지하고 그 이유를 보고한다.
@@ -38,6 +38,7 @@ ONNX QDQ 모델
 - [x] ARONA가 선택한 deployable model을 NUCLEO-N657X0-Q에 programming하고 연속 inference
   최소 5회를 확인한다. 두 선정 모델 모두 rewrite 비대상이라 baseline을 유지했다.
   - external Windows E2E: MobileNetV2 fixed-input 2,049회, YOLO26n fixed-input 927회 검증 성공.
+  - external Windows `optimize --deploy`: MobileNet terminal ArgMax variant 2,280회 검증 성공, 평균 2.644 ms.
 - [x] 모델 checksum, toolchain/firmware/board revision, 명령, exit code, latency와 memory를 기록한다.
   - evidence: `docs/checkpoint4-e2e-evidence.md`
 - [x] `pytest`, Ruff format/lint, mypy가 모두 통과한다.
@@ -219,6 +220,7 @@ ONNX QDQ 모델
 - [x] serial/debug output 또는 공식 application 출력으로 연속 inference 5회를 확인한다.
   - MobileNet fixed-input: 1,021회, 2–3 ms(평균 2.643 ms), model/hash 검증 성공
   - external Windows rerun: 2,049회, 2–3 ms(평균 2.643 ms), model/hash 검증 성공
+  - external Windows `optimize --deploy`: 2,280회, 2–3 ms(평균 2.644 ms), run `outputs/demo-runs/20260824T001942Z-optimize`
   - evidence: `outputs/checkpoint3/image-classification/fixed-input-aligned-validate/`
 - [ ] 가능하면 baseline/optimized target latency를 같은 조건에서 각각 20회 측정한다.
 - [x] 측정이 불가능하면 compiler estimate와 target measurement를 혼합하지 않는다.
@@ -281,10 +283,10 @@ ONNX QDQ 모델
 - [x] Ruff lint 2건과 mypy 2건을 해결한다.
 - [x] 모든 unit/contract/integration test를 통과시킨다.
 - [x] hardware test는 marker로 분리하고, 보드가 없을 때 명시적으로 skip한다.
-- [ ] 깨끗한 checkout에서 설치→모델 확보→optimize→deploy를 재현한다.
+- [x] 깨끗한 checkout에서 설치→모델 확보→optimize→deploy를 재현한다.
   - tracked source clean archive의 `uv sync --frozen`, CLI, pytest는 재현했다.
   - 2026-08-24 외부 Windows PC에서 모델·vendor 확보, ST Edge AI Core 4.0.1 탐지, MobileNetV2/YOLO26n 단계별 deployment E2E, physical JP2 전환, UART validation까지 재현했다.
-  - 단, `arona optimize --deploy` 단일 명령 경로는 아직 별도 확인 필요.
+  - `arona optimize --deploy` 단일 명령 경로도 MobileNet terminal ArgMax variant로 재현했다.
 - [x] 3분 이내 데모 명령과 예상 화면을 `docs/demo.md`에 작성한다.
 - [x] 성공 run의 재배포 가능한 metadata/JSON/checksum을 fixture로 고정한다.
   - fixture: `tests/fixtures/deployment/nucleo_checkpoint4_e2e/evidence.json`
@@ -335,4 +337,5 @@ ONNX QDQ 모델
 - [STM32N6 image classification 배포 절차](https://github.com/STMicroelectronics/stm32ai-modelzoo-services/blob/main/image_classification/docs/README_DEPLOYMENT_STM32N6.md)
 - [MobileNetV2 공식 STM32 Model Zoo 정보](https://github.com/STMicroelectronics/stm32ai-modelzoo/blob/main/image_classification/mobilenetv2/README.md)
 - [YOLO26n 공식 STM32 Model Zoo 정보](https://github.com/STMicroelectronics/stm32ai-modelzoo/blob/main/object_detection/yolo26n/README.md)
+
 
