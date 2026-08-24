@@ -1,4 +1,4 @@
-"""Allow ``python -m arona`` to run the CLI."""
+"""Allow ARONA commands to run through ``python -m arona``."""
 
 from arona.cli import app
 

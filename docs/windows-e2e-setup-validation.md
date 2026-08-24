@@ -570,13 +570,23 @@ uv run arona doctor --serial-port COM3
 
 ```powershell
 $env:ARONA_UNICODE = "1"
+$env:ARONA_COLOR = "1"
 uv run arona doctor --serial-port COM3
 ```
 
-구형 콘솔이나 CI에서 색/유니코드를 끄려면:
+`ARONA_COLOR=1`은 상위 환경에 `NO_COLOR`가 설정돼 있어도 ARONA의 컬러 출력을 강제로
+활성화한다. 색상만 끄고 유니코드 장면은 유지하려면:
 
 ```powershell
+Remove-Item Env:\ARONA_COLOR -ErrorAction SilentlyContinue
 $env:NO_COLOR = "1"
+uv run arona doctor --serial-port COM3
+```
+
+구형 콘솔에서 ASCII 장면까지 강제하려면:
+
+```powershell
+$env:ARONA_PLAIN_BANNER = "1"
 uv run arona doctor --serial-port COM3
 ```
 
@@ -592,6 +602,47 @@ uv run arona doctor --serial-port COM3
 - ST-LINK serial port
 
 serial port 자동 탐지가 실패해도 `--serial-port COM3`로 명시할 수 있다.
+
+### 공통 CLI UX
+
+모든 상위 명령과 deployment 하위 명령은 동일한 출력 구조를 사용한다.
+
+- `ARONA + 명령명` 헤더와 한 줄 목적 설명
+- 정렬된 `key: value` 정보
+- `1/4` 형태의 단계 번호와 `✓`/`!`/`✗` 상태
+- 사용자 조작이 필요한 경우 경고 상자
+- 성공·실패 이유와 산출물 경로를 표시하는 결과 상자
+- 긴 경로와 문장은 현재 터미널 너비에 맞춰 줄바꿈
+
+적용 명령은 `version`, `discover`, `doctor`, `analyze`, `optimize`, `schema export`와
+`deployment instrument/fixed-input/configure/build/sync-runtime/generate/program/backup/validate`다.
+
+### 화살표 키 인터랙티브 런처
+
+인자 없이 실행하면 초보자용 작업 런처가 열린다.
+
+```powershell
+uv run arona
+```
+
+런처는 다음 동작을 제공한다.
+
+1. 첫 화면에서 현재 모델, 보드, 환경과 전체 배포 workflow 상태를 확인한다.
+2. 위·아래 화살표로 `doctor`, `discover`, `analyze`, `optimize`, `optimize --deploy`,
+   `deployment validate`, 전체 도움말 중 하나를 직접 선택한다.
+3. 모델이 필요한 작업은 경로 자동완성 입력을 제공한다.
+4. 변경이나 배포가 발생하는 작업은 생성된 실제 CLI 명령을 먼저 보여준다.
+5. 실행 중에는 `Inspect → Analyze → Optimize → Deploy → Validate` 트래커에서 완료, 실행 중,
+   대기 상태를 구분한다.
+6. 명령 완료 후 결과 보고서에서 모델, 출력 경로, 소요 시간, 종료 코드와 추천 다음 행동을
+   확인하고 런처 복귀 또는 종료를 선택한다.
+
+직접 명령 실행 방식은 변경하지 않았으며, CI나 redirect처럼 TTY가 아닌 환경에서 `arona`만
+실행하면 일반 도움말로 fallback한다. 런처를 명시적으로 열려면 다음을 사용한다.
+
+```powershell
+uv run arona interactive
+```
 
 ## 14. 자주 만난 오류와 해결
 
