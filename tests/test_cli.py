@@ -25,7 +25,20 @@ def test_version_command() -> None:
     result = runner.invoke(app, ["version"])
 
     assert result.exit_code == 0
-    assert result.stdout.strip() == "0.1.0"
+    assert "ARONA  Version" in result.stdout
+    assert "version:  0.1.0" in result.stdout
+
+
+def test_help_uses_arona_color_theme() -> None:
+    from typer import rich_utils
+
+    result = runner.invoke(app, ["--help"])
+
+    assert result.exit_code == 0
+    assert "Options" in result.stdout
+    assert "Commands" in result.stdout
+    assert rich_utils.STYLE_OPTION == "bold #4ea8d7"
+    assert rich_utils.STYLE_USAGE == "#d76f9f"
 
 
 def test_schema_export_command(tmp_path: Path) -> None:
@@ -59,7 +72,8 @@ def test_analyze_command_writes_json_and_markdown_report(tmp_path: Path) -> None
 
     assert result.exit_code == 0
     assert "software=1530" in result.stdout
-    assert "deployable: infeasible" in result.stdout
+    assert "deployable:" in result.stdout
+    assert "infeasible" in result.stdout
     run_dirs = list((tmp_path / "outputs").iterdir())
     assert len(run_dirs) == 1
     assert (run_dirs[0] / "original-analysis.json").is_file()
@@ -136,7 +150,8 @@ def test_optimize_command_attaches_deployment_result(tmp_path: Path) -> None:
 
     assert result.exit_code == 0
     assert "Board deployment" in result.stdout
-    assert "observations: 5/5 succeeded" in result.stdout
+    assert "observations:" in result.stdout
+    assert "5/5 succeeded" in result.stdout
     run_dirs = list((tmp_path / "outputs").iterdir())
     assert len(run_dirs) == 1
     assert (run_dirs[0] / "deployment/deployment-result.json").is_file()

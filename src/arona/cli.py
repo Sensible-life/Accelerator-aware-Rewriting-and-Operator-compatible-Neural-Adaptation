@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Annotated
 
 import typer
+from typer import rich_utils
 
 from arona import __version__
 from arona.contracts.export import export_json_schemas
@@ -32,17 +33,42 @@ from arona.pipeline.analyze import analyze_model, discover_stedgeai
 from arona.pipeline.optimize import optimize_model
 from arona.reporting.markdown import render_markdown_report
 from arona.reporting.terminal import (
-    render_banner,
+    render_action_result,
+    render_command_header,
     render_deployment_block,
     render_discovery,
+    render_heading,
+    render_key_values,
+    render_notice,
+    render_numbered_list,
+    render_progress_step,
     render_run_report,
+    write_terminal,
 )
+
+ARONA_HELP_BLUE = "#4ea8d7"
+ARONA_HELP_PINK = "#d76f9f"
+
+if os.getenv("ARONA_COLOR", "").strip().lower() not in {"", "0", "false", "no", "off"}:
+    os.environ.pop("NO_COLOR", None)
+    os.environ["FORCE_COLOR"] = "1"
+
+rich_utils.STYLE_OPTION = f"bold {ARONA_HELP_BLUE}"
+rich_utils.STYLE_SWITCH = f"bold {ARONA_HELP_BLUE}"
+rich_utils.STYLE_COMMANDS_TABLE_FIRST_COLUMN = f"bold {ARONA_HELP_BLUE}"
+rich_utils.STYLE_OPTIONS_PANEL_BORDER = ARONA_HELP_BLUE
+rich_utils.STYLE_COMMANDS_PANEL_BORDER = ARONA_HELP_BLUE
+rich_utils.STYLE_USAGE = ARONA_HELP_PINK
+rich_utils.STYLE_USAGE_COMMAND = f"bold {ARONA_HELP_BLUE}"
+rich_utils.STYLE_REQUIRED_LONG = f"bold {ARONA_HELP_PINK}"
+rich_utils.STYLE_REQUIRED_SHORT = f"bold {ARONA_HELP_PINK}"
 
 # denote arona as an app
 app = typer.Typer(
     name="arona",
     help="Optimize ONNX models for detected edge accelerators.",
-    no_args_is_help=True,
+    no_args_is_help=False,
+    invoke_without_command=True,
 )
 
 # create schema subcommand(ex: arona schema export)
@@ -62,6 +88,31 @@ DEFAULT_IMAGE_CLASSIFICATION_FSBL = Path(
 )
 
 
+@app.callback(invoke_without_command=True)
+def main(context: typer.Context) -> None:
+    """Open the interactive launcher when ARONA is run without a subcommand."""
+
+    if context.invoked_subcommand is not None:
+        return
+    from arona.interactive import interactive_terminal_available, launch_interactive
+
+    if interactive_terminal_available():
+        launch_interactive()
+    else:
+        typer.echo(context.get_help())
+
+
+@app.command("interactive")
+def interactive() -> None:
+    """Open the arrow-key interactive ARONA launcher."""
+
+    from arona.interactive import interactive_terminal_available, launch_interactive
+
+    if not interactive_terminal_available():
+        raise typer.BadParameter("The interactive launcher requires a terminal (TTY).")
+    launch_interactive()
+
+
 if os.getenv("ARONA_UNICODE") and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
@@ -69,7 +120,15 @@ if os.getenv("ARONA_UNICODE") and hasattr(sys.stdout, "reconfigure"):
 @app.command()
 def version() -> None:
     """Print the installed ARONA version."""
-    typer.echo(__version__)
+    _echo_terminal(
+        "\n".join(
+            [
+                *render_command_header("Version", "Installed ARONA CLI build."),
+                "",
+                *render_key_values("Package", [("version", __version__)]),
+            ]
+        )
+    )
 
 
 @app.command()
@@ -77,7 +136,7 @@ def discover() -> None:
     """Probe the local ST Edge AI target environment."""
 
     discovery = discover_stedgeai()
-    typer.echo(render_discovery(discovery))
+    _echo_terminal(render_discovery(discovery))
 
 
 @app.command()
@@ -119,36 +178,63 @@ def doctor(
     ready = all(item[3] for item in required_checks)
 
     lines = [
-        *render_banner("Doctor"),
-        "",
-        "Target",
-        f"  board: {target.device.model if target is not None and target.device else 'unknown'}",
-        (
-            "  accelerator: "
-            f"{target.device.accelerator if target is not None and target.device else 'unknown'}"
+        *render_command_header(
+            "Doctor",
+            "Check the local STM32N6 compiler, programmer, and board toolchain.",
+            scene=True,
         ),
         "",
-        "Checks",
+        *render_key_values(
+            "Target",
+            [
+                (
+                    "board",
+                    target.device.model if target is not None and target.device else "unknown",
+                ),
+                (
+                    "accelerator",
+                    target.device.accelerator
+                    if target is not None and target.device
+                    else "unknown",
+                ),
+            ],
+        ),
+        "",
+        render_heading("Checks"),
     ]
-    for name, version, path, ok in checks:
+    for index, (name, version, path, ok) in enumerate(checks, 1):
         detail = version or (path.as_posix() if path is not None else "missing")
-        lines.append(f"  {_ok_icon(ok)} {name}: {detail}")
-    if detected_serial_port is None:
         lines.append(
-            "  ! warning: serial port was not auto-detected; "
-            "pass --serial-port COMx during validation"
+            render_progress_step(
+                index,
+                len(checks),
+                name,
+                "succeeded" if ok else "failed",
+                detail,
+            )
+        )
+    warnings: list[str] = []
+    if detected_serial_port is None:
+        warnings.append(
+            "Serial port was not auto-detected; pass --serial-port COMx during validation."
         )
     if target is not None:
         for issue in target.issues:
-            lines.append(f"  ! warning: {issue}")
+            warnings.append(issue)
+    if warnings:
+        lines.extend(["", *render_notice("Needs attention", warnings, "warning")])
+    result_message = (
+        "Ready for optimize and deployment."
+        if ready
+        else "Install the missing required tools, then run arona doctor again."
+    )
     lines.extend(
         [
             "",
-            "Result",
-            "  ready for optimize/deploy" if ready else "  missing required tools",
+            *render_notice("Doctor complete", [result_message], "succeeded" if ready else "failed"),
         ]
     )
-    typer.echo("\n".join(lines))
+    _echo_terminal("\n".join(lines))
     if not ready:
         raise typer.Exit(1)
 
@@ -180,8 +266,8 @@ def analyze(
     report = analyze_model(model, compiler_log=compiler_log, output_directory=output_directory)
     run_directory = output_directory / report.run_id
     _write_run_artifacts(report, run_directory)
-    typer.echo(render_run_report(report))
-    typer.echo(f"\nArtifacts written to {run_directory.as_posix()}")
+    _echo_terminal(render_run_report(report, command="Analyze"))
+    _echo_terminal("\n" + "\n".join(render_notice("Artifacts written", [run_directory.as_posix()])))
 
 
 @app.command()
@@ -359,13 +445,21 @@ def optimize(
             update={"deployment": _load_deployment_result(deployment_result)}
         )
     _write_run_artifacts(report, run_directory)
-    typer.echo(render_run_report(report))
+    _echo_terminal(render_run_report(report, command="Optimize"))
     if validation_input is not None:
-        typer.echo(
-            "Validation input directory recorded for reproducibility; "
-            "terminal ArgMax equivalence used deterministic generated inputs."
+        _echo_terminal(
+            "\n"
+            + "\n".join(
+                render_notice(
+                    "Validation evidence",
+                    [
+                        "Input directory recorded for reproducibility.",
+                        "Terminal ArgMax equivalence used deterministic generated inputs.",
+                    ],
+                )
+            )
         )
-    typer.echo(f"Artifacts written to {run_directory.as_posix()}")
+    _echo_terminal("\n" + "\n".join(render_notice("Artifacts written", [run_directory.as_posix()])))
     if (
         deploy
         and report.deployment is not None
@@ -387,8 +481,17 @@ def export_schema(
 ) -> None:
     """Export versioned JSON Schemas used by backend, pipeline, and CLI."""
     written_files = export_json_schemas(output_directory)
-    for path in written_files:
-        typer.echo(path.as_posix())
+    lines = [
+        *render_command_header("Schema export", "Write versioned backend and CLI contracts."),
+        "",
+        *render_numbered_list("Generated files", [path.as_posix() for path in written_files]),
+        "",
+        *render_notice(
+            "Schema export complete",
+            [f"{len(written_files)} files written to {output_directory.as_posix()}"],
+        ),
+    ]
+    _echo_terminal("\n".join(lines))
 
 
 def _write_run_artifacts(report: RunReport, run_directory: Path) -> None:
@@ -465,8 +568,18 @@ def _run_live_deployment(
     )
     deployer = Stm32N6Deployer()
 
-    typer.echo("\nDeployment")
-    typer.echo("  - codegen: generating model files")
+    _echo_terminal(
+        "\n"
+        + "\n".join(
+            render_command_header(
+                "Deploy",
+                "Generate, build, program, and validate the selected model on STM32N6.",
+            )
+        )
+    )
+    _echo_terminal(
+        render_progress_step(1, 4, "Code generation", "running", "Generating model files")
+    )
     generate_result = deployer.generate(
         config,
         selected_model,
@@ -474,12 +587,14 @@ def _run_live_deployment(
         deployment_directory / "generate",
     )
     results = [generate_result]
-    typer.echo(f"  {_stage_icon(generate_result.status)} codegen: {generate_result.status}")
+    _echo_terminal(render_progress_step(1, 4, "Code generation", generate_result.status))
     if generate_result.status != StageStatus.SUCCEEDED:
         return _merge_deployment_results(results, config)
 
     generated_model_directory = deployment_directory / "generate/model-files"
-    typer.echo("  - link: building and signing official application")
+    _echo_terminal(
+        render_progress_step(2, 4, "Build and link", "running", "Building signed application")
+    )
     build_result = deployer.build(
         config,
         application_directory,
@@ -490,7 +605,7 @@ def _run_live_deployment(
         screen_interface=screen_interface,
     )
     results.append(build_result)
-    typer.echo(f"  {_stage_icon(build_result.status)} link: {build_result.status}")
+    _echo_terminal(render_progress_step(2, 4, "Build and link", build_result.status))
     if build_result.status != StageStatus.SUCCEEDED:
         return _merge_deployment_results(results, config)
 
@@ -498,7 +613,15 @@ def _run_live_deployment(
         application_directory / build_top / "Application/NUCLEO-N657X0-Q/Project_sign.hex"
     )
     network_data = generated_model_directory / "network_data.hex"
-    typer.echo("  - programming: flashing FSBL, application, and network data")
+    _echo_terminal(
+        render_progress_step(
+            3,
+            4,
+            "Board programming",
+            "running",
+            "Flashing FSBL, application, and network data",
+        )
+    )
     program_result = deployer.program(
         config,
         [
@@ -510,18 +633,29 @@ def _run_live_deployment(
         model_path=selected_model,
     )
     results.append(program_result)
-    typer.echo(f"  {_stage_icon(program_result.status)} programming: {program_result.status}")
+    _echo_terminal(render_progress_step(3, 4, "Board programming", program_result.status))
     if program_result.status == StageStatus.FAILED:
         return _merge_deployment_results(results, config)
 
-    typer.echo(
-        "\nProgramming completed. Move JP2 to position 1 (flash boot), "
-        f"power-cycle the board, and wait for {serial_port} to reconnect."
+    _echo_terminal(
+        "\n"
+        + "\n".join(
+            render_notice(
+                "Board action required",
+                [
+                    "Move JP2 to position 1 (flash boot).",
+                    f"Power-cycle the board and wait for {serial_port} to reconnect.",
+                ],
+                "warning",
+            )
+        )
     )
     if not typer.confirm("Continue with UART inference validation?", default=False):
         return _merge_deployment_results(results, config)
 
-    typer.echo("  - validation: reading UART inference telemetry")
+    _echo_terminal(
+        render_progress_step(4, 4, "UART validation", "running", "Reading inference telemetry")
+    )
     validate_result = deployer.validate_serial(
         NucleoDeploymentConfig(
             application=application,
@@ -536,7 +670,7 @@ def _run_live_deployment(
         expected_input_fnv1a=expected_input_fnv1a,
     )
     results.append(validate_result)
-    typer.echo(f"  {_stage_icon(validate_result.status)} validation: {validate_result.status}")
+    _echo_terminal(render_progress_step(4, 4, "UART validation", validate_result.status))
     return _merge_deployment_results(results, config)
 
 
@@ -602,7 +736,9 @@ def deployment_instrument(
     except TelemetryInstrumentationError as error:
         raise typer.BadParameter(str(error)) from error
     action = "instrumented" if changed else "already instrumented"
-    typer.echo(f"{source_path.as_posix()}: {action}")
+    _echo_terminal(
+        render_action_result("Deployment / Instrument", action.title(), source_path.as_posix())
+    )
 
 
 @deployment_app.command("fixed-input")
@@ -623,7 +759,9 @@ def deployment_fixed_input(
     except TelemetryInstrumentationError as error:
         raise typer.BadParameter(str(error)) from error
     action = "fixed-input smoke mode enabled" if changed else "already enabled"
-    typer.echo(f"{source_path.as_posix()}: {action}")
+    _echo_terminal(
+        render_action_result("Deployment / Fixed input", action.title(), source_path.as_posix())
+    )
 
 
 @deployment_app.command("configure")
@@ -643,7 +781,13 @@ def deployment_configure(
         config_path = configure_mvp_application(application, application_directory)
     except ValueError as error:
         raise typer.BadParameter(str(error)) from error
-    typer.echo(config_path.as_posix())
+    _echo_terminal(
+        render_action_result(
+            "Deployment / Configure",
+            "Application configured",
+            config_path.as_posix(),
+        )
+    )
 
 
 @deployment_app.command("build")
@@ -696,7 +840,7 @@ def deployment_build(
         model_directory=model_directory,
         screen_interface=screen_interface,
     )
-    typer.echo(_render_deployment_result(result))
+    _echo_terminal(_render_deployment_result(result, "Deployment / Build"))
     if result.status == "failed":
         raise typer.Exit(1)
 
@@ -729,7 +873,13 @@ def deployment_sync_runtime(
         )
     except ValueError as error:
         raise typer.BadParameter(str(error)) from error
-    typer.echo(manifest_path.as_posix())
+    _echo_terminal(
+        render_action_result(
+            "Deployment / Sync runtime",
+            "Runtime synchronized",
+            manifest_path.as_posix(),
+        )
+    )
 
 
 @deployment_app.command("generate")
@@ -759,7 +909,7 @@ def deployment_generate(
         model_support_directory,
         output_directory,
     )
-    typer.echo(_render_deployment_result(result))
+    _echo_terminal(_render_deployment_result(result, "Deployment / Generate"))
     if result.status != "succeeded":
         raise typer.Exit(1)
 
@@ -802,7 +952,7 @@ def deployment_program(
         output_directory,
         model_path=model,
     )
-    typer.echo(_render_deployment_result(result))
+    _echo_terminal(_render_deployment_result(result, "Deployment / Program"))
     if result.status == "failed":
         raise typer.Exit(1)
 
@@ -832,7 +982,7 @@ def deployment_backup(
         NucleoDeploymentConfig(application=application, timeout_seconds=timeout_seconds),
         output_directory,
     )
-    typer.echo(_render_deployment_result(result))
+    _echo_terminal(_render_deployment_result(result, "Deployment / Backup"))
     if result.status != "succeeded":
         raise typer.Exit(1)
 
@@ -885,14 +1035,14 @@ def deployment_validate(
         expected_model_name=expected_model_name,
         expected_input_fnv1a=expected_input_fnv1a,
     )
-    typer.echo(_render_deployment_result(result))
+    _echo_terminal(_render_deployment_result(result, "Deployment / Validate"))
     if result.status != "succeeded":
         raise typer.Exit(1)
 
 
 def _detect_stlink_serial_port() -> str | None:
     try:
-        from serial.tools import list_ports
+        from serial.tools import list_ports  # type: ignore[import-untyped]
     except ImportError:
         return None
     for port in list_ports.comports():
@@ -906,16 +1056,8 @@ def _detect_stlink_serial_port() -> str | None:
     return None
 
 
-def _ok_icon(ok: bool) -> str:
-    return "OK" if ok else "FAIL"
-
-
-def _stage_icon(status: object) -> str:
-    if str(status) == "succeeded":
-        return "OK"
-    if str(status) == "failed":
-        return "FAIL"
-    return "!"
+def _echo_terminal(message: str) -> None:
+    write_terminal(message)
 
 
 def _parse_firmware_spec(value: str) -> FirmwareImage:
@@ -934,7 +1076,16 @@ def _parse_firmware_spec(value: str) -> FirmwareImage:
     )
 
 
-def _render_deployment_result(result: object) -> str:
+def _render_deployment_result(result: object, command: str) -> str:
     if not isinstance(result, DeploymentResult):
         raise TypeError("result must be a DeploymentResult")
-    return "\n".join(render_deployment_block(result))
+    return "\n".join(
+        [
+            *render_command_header(
+                command,
+                "STM32N6 deployment evidence and result.",
+            ),
+            "",
+            *render_deployment_block(result),
+        ]
+    )

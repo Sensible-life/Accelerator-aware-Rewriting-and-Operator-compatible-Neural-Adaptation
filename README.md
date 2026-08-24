@@ -215,6 +215,30 @@ uv run arona --help
 uv run pytest
 ```
 
+ARONA의 모든 명령은 같은 터미널 UX 규칙을 사용합니다. 파랑·핑크 전경색의 명령 헤더,
+정렬된 키/값, 번호가 붙은 진행 단계, `✓`/`!`/`✗` 상태, 결과·경고 상자로 긴 컴파일 및
+보드 배포 과정을 구분합니다. Windows Terminal에서 색과 유니코드를 강제로 활성화하려면:
+
+```powershell
+$env:ARONA_UNICODE = "1"
+$env:ARONA_COLOR = "1"
+uv run arona doctor
+```
+
+인자 없이 `arona`를 실행하면 화살표 키 기반 인터랙티브 런처가 열린다. 위·아래 키로
+작업을 고르고 Enter로 실행하며, 모델 경로 자동완성, 실행 계획 확인, 실행 후 다음 행동 선택을
+지원한다. 첫 화면은 모델·대상·환경과 전체 workflow를 요약한 작업 대시보드이고, 명령 실행
+중에는 `Inspect → Analyze → Optimize → Deploy → Validate` 트래커를 표시한다. 완료 후에는
+모델·출력 경로·소요 시간·종료 코드와 추천 다음 행동을 담은 결과 보고서로 전환된다. 기존 직접
+명령은 스크립트·CI·재현을 위해 그대로 유지된다.
+
+```powershell
+uv run arona
+```
+
+런처를 명시적으로 열려면 `uv run arona interactive`를 사용할 수 있다. 입력이나 출력이 TTY가
+아닌 환경에서 인자 없이 실행하면 런처 대신 일반 도움말을 출력한다.
+
 backend, pipeline과 CLI/reporting이 공유하는 Pydantic 계약은 `src/arona/contracts/v1.py`, 생성된 JSON Schema는
 `schemas/v0.1.0/`에 있습니다.
 
